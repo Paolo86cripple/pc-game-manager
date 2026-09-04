@@ -147,7 +147,7 @@ class PrefixWizard(Gtk.Window):
         self.storage = self.entry(box, "Radice dati manager", root, folder=True)
         self.prefix = self.entry(box, "Prefix permanente", str(DEFAULT_STORAGE / "nuovo" / "prefix"), folder=True)
         self.saves = self.entry(box, "Salvataggi", str(DEFAULT_STORAGE / "nuovo" / "saves"), folder=True)
-        self.home = self.entry(box, "HOME sandbox", str(DEFAULT_STORAGE / "nuovo" / "home"), folder=True)
+        self.home = self.entry(box, "HOME sandbox", str(DEFAUL_STORAGE / "nuovo" / "home"), folder=True)
         self._path_defaults = {"prefix": self.prefix.get_text(), "saves": self.saves.get_text(), "home": self.home.get_text()}
         self.separate_game = Gtk.CheckButton(label="Mantieni separati gioco, prefix, HOME e salvataggi"); self.separate_game.set_active(True); box.append(self.separate_game)
         self.game_ro = Gtk.CheckButton(label="Monta la directory del gioco in sola lettura (consigliato)"); self.game_ro.set_active(True); box.append(self.game_ro)
@@ -168,7 +168,7 @@ class PrefixWizard(Gtk.Window):
 
     def page_runtime(self):
         box = self.page("Runtime")
-        self.arch = Gtk.DropDown.new_from_strings(list(ARCHES)); self.arch.set_selected(0); self._row(box, "Architettura", self.arch)
+        self.arch = Gtk.DropDown.new_from_strings(list(ARCHES)); self.arch.set_selected(0); self._row(box, "Architetura", self.arch)
         self.winver = Gtk.DropDown.new_from_strings([x[0] for x in WINDOWS]); self.winver.set_selected(1); self._row(box, "Versione Windows", self.winver)
         self.runner_combo = Gtk.DropDown.new_from_strings(["Wine di sistema"]); self._row(box, "Runtime", self.runner_combo)
         refresh = Gtk.Button(label="Aggiorna runtime locali"); refresh.connect("clicked", lambda _b: self.refresh_runners()); box.append(refresh)
@@ -243,7 +243,7 @@ class PrefixWizard(Gtk.Window):
         if custom: deps.extend(custom.split())
         runtime = "Wine di sistema" if self.runner_combo.get_selected() == 0 else self.runner_options[self.runner_combo.get_selected() - 1].get("name", "runtime")
         return "\n".join([
-            f"Profilo: {self.name.get_text().strip()}", f"Gioco: {self.game_root.get_text().strip()}", f"EXE: {self.exe.get_text().strip()}",
+            f"Profilo: {self.name.get_text().strip()}", f"Gioco: {self.game_root.get_text().strip()}", f"EZE: {self.exe.get_text().strip()}",
             f"Prefix: {self.prefix.get_text().strip()}", f"HOME sandbox: {self.home.get_text().strip()}", f"Salvataggi: {self.saves.get_text().strip()}",
             f"Runtime: {runtime}", f"Architettura: {ARCHES[self.arch.get_selected()]}", f"Windows: {self.winver.get_selected_item().get_string() if self.winver.get_selected_item() else 'Windows 10'}",
             f"GPU: {gpu.get('label', 'Auto')}", f"Renderer: {RENDERERS[self.renderer.get_selected()]}", f"Display/input: {self.display_backend.get_selected() == 0 and 'Auto (Wayland â†’ XWayland)' or self.display_backend.get_selected() == 1 and 'Wayland nativo' or 'XWayland'}",
@@ -433,7 +433,7 @@ class ManagerWindow(Gtk.ApplicationWindow):
         self.sandbox_policy_info = Gtk.Label(xalign=0, wrap=True); self.sandbox_policy_info.add_css_class("dim-label"); b.append(self.sandbox_policy_info)
 
         b.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
-        exposure = Gtk.Label(label="Interfacce esposte", xalign=0); exposure.add_css_class("title-4"); b.append(exposure)
+        exposure = Gtk.Label(label="Interfacticce gesposte", xalign=0); exposure.add_css_class("title-4"); b.append(exposure)
         for key, label, default in (("wayland", "Wayland", True), ("xwayland", "XWayland", True), ("vulkan", "GPU/Vulkan (/dev/dri)", True), ("input", "Controller selezionati (/dev/input esplicito)", True), ("cdemu", "CDEmu (non ancora implementato)", False), ("udisks2", "UDisks2 mediato (non ancora implementato)", False)):
             cb = Gtk.CheckButton(label=label); cb.connect("toggled", self._sandbox_policy_changed); self.cap_checks[key] = cb; b.append(cb)
             if key in {"cdemu", "udisks2"}: cb.set_sensitive(False)
@@ -456,7 +456,7 @@ class ManagerWindow(Gtk.ApplicationWindow):
         self.dep_list = Gtk.ListBox(); b.append(self.dep_list); self.dep_input = self.mk_entry(b, "Componente custom / winetricks verb"); self.dep_selected = Gtk.Label(label="Seleziona le dipendenze da installare/riparare", xalign=0); b.append(self.dep_selected)
         for key, label in (("corefonts", "Microsoft Core Fonts"), ("vcrun2022", "Visual C++ 2015â€“2022"), ("d3dcompiler_47", "Direct3D compiler 47"), ("faudio", "FAudio / XAudio"), ("xact", "XACT"), ("dotnet48", ".NET Framework 4.8")):
             cb = Gtk.CheckButton(label=label); cb._dep_key = key; self.dep_list.append(cb)
-        r = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8); b.append(r); x = Gtk.Button(label="Installa/Ripara selezionate"); x.connect("clicked", self.install_dependencies); r.append(x); rb = Gtk.Button(label="Ricrea e reinstalla tutto"); rb.connect("clicked", self.rebuild_and_deps); r.append(rb)
+        r = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8); b.append(r); zh=Gtk.Button(label="Installa/Ripara selezionate"); zx.connect("clicked", self.install_dependencies); r.append(xx); rb = Gtk.Button(label="Ricrea e reinstalla tutto"); rb.connect("clicked", self.rebuild_and_deps); r.append(rb)
         b.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
         codec_title = Gtk.Label(label="Codec video retro", xalign=0); codec_title.add_css_class("title-4"); b.append(codec_title)
         self.retro_codec_combo = Gtk.DropDown.new_from_strings([
@@ -551,7 +551,7 @@ class ManagerWindow(Gtk.ApplicationWindow):
         win_index = next((i for i, item in enumerate(WINDOWS) if item[1] == win_value), 1)
         self.p_windows_combo.set_selected(win_index)
         self.game_root_ro.set_active(bool(data.get("game_root_readonly", False)))
-        self._select_gpu(data.get("gpu", {"mode": "auto"})); self.renderer_combo.set_selected(RENDITER_INDEX(data.get("renderer", "wined3d"))); self.renderer_path_entry.set_text(data.get("renderer_path", ""));
+        self._select_gpu(data.get("gpu", {"mode": "auto"})); self.renderer_combo.set_selected(RENDITER_INDEX(data.get("renderer", "wined3d"))); self.renderer_path_entry.set_text(data.get("renderer_path", "")); 
         legacy_backend = data.get("display_backend")
         if legacy_backend not in {"auto", "wayland", "xwayland"}:
             legacy_backend = "wayland" if data.get("prefer_wayland", True) else "xwayland"
@@ -560,472 +560,9 @@ class ManagerWindow(Gtk.ApplicationWindow):
         for k, cb in self.cap_checks.items(): cb.set_active(False if k in {"cdemu", "udisks2"} else bool(caps.get(k, False)))
         self.network_combo.set_selected(1 if data.get("network") == "host" else 0); self.audio_combo.set_selected(0 if data.get("audio_backend", "pulse") != "disabled" else 1); self.audio_cap.set_active(bool(caps.get("audio", True)))
         self.refresh_access(); self.refresh_discs(); self.refresh_dependencies(); self._restore_runtime_choice(); self._refresh_sandbox_policy_info(); self._loading = False
-        self.launch_status.set_text(f"{self.p_name.get_text()} â€” {self.p_exe.get_text()}"); self.log(f"Profilo caricato: {row._path.name}")
-
-    def _refresh_wayland_status(self):
-        if not hasattr(self, "wayland_status_label"):
-            return
-        status = str(self.profile.get("wayland_input_status", "unknown")) if isinstance(self.profile, dict) else "unknown"
-        reason = str(self.profile.get("wayland_input_reason", "")).strip() if isinstance(self.profile, dict) else ""
-        labels = {"working": "funzionante", "broken": "NON funzionante", "unknown": "non verificato"}
-        text = f"Stato input Wayland: {labels.get(status, status)}"
-        if reason:
-            text += f" â€” {reason}"
-        if status == "broken":
-            text += " â€” Auto userÃ  XWayland"
-        self.wayland_status_label.set_text(text)
-
-    def _set_wayland_status(self, status: str, reason: str = ""):
-        if not self.current_profile:
-            return self.log("Seleziona un profilo.")
-        self.profile["wayland_input_status"] = status
-        self.profile["wayland_input_reason"] = reason
-        self.current_profile.write_text(json.dumps(self.profile, indent=2), encoding="utf-8")
-        self._refresh_wayland_status()
-        self.log(f"Wayland input per {self.current_profile.name}: {status}" + (f" â€” {reason}" if reason else ""))
-
-    def mark_wayland_broken(self, _b=None):
-        self._set_wayland_status("broken", "input tastiera non disponibile con WineWayland per questo gioco")
-
-    def mark_wayland_working(self, _b=None):
-        self._set_wayland_status("working", "input tastiera verificato con WineWayland")
-
-    def retry_wayland(self, _b=None):
-        self._set_wayland_status("unknown", "")
-        self.log("Wayland verrÃ  ritentato al prossimo avvio in modalitÃ  Auto.")
-
-    def debug_wayland_input(self, _b=None):
-        if not self.current_profile:
-            return self.log("Seleziona un profilo.")
-        self.save_profile(None)
-        helper = shutil.which("pc-game-sandbox") or str(BASE / "bin" / "pc-game-sandbox")
-        self._spawn_logged([helper, "input-debug", str(self.current_profile)], "wayland-input")
-
-    def _select_gpu(self, gpu):
-        self.gpu_combo.set_selected(0)
-        if gpu.get("mode") == "pci":
-            for i, d in enumerate(self.gpu_devices):
-                if d.get("pci") == gpu.get("pci") and d.get("vendor_device") == gpu.get("vendor_device"): self.gpu_combo.set_selected(i); break
-        idx = self.gpu_combo.get_selected(); d = self.gpu_devices[idx] if idx < len(self.gpu_devices) else self.gpu_devices[0]; self.gpu_info.set_text(f"Modello: {d.get('model')}\nPCI: {d.get('pci', 'auto')}\nVendor:Device: {d.get('vendor_device', 'auto')}")
-
-    def refresh_gpus(self):
-        self.gpu_devices = detect_gpus(); self.gpu_combo.set_model(Gtk.StringList.new([d["label"] for d in self.gpu_devices])); self._select_gpu(self.profile.get("gpu", {"mode": "auto"})); self.log(f"GPU rilevate: {max(0, len(self.gpu_devices)-1)}")
-
-    def _renderer_changed(self, *_args):
-        if self._loading:
-            return
-        idx = self.renderer_combo.get_selected()
-        renderer = RENDERERS[idx] if idx < len(RENDERERS) else "wined3d"
-        if renderer in ("auto", "wined3d"):
-            self.renderer_auto_status.set_text("Nessuna DLL esterna necessaria.")
-            return
-        path = self.renderer_path_entry.get_text().strip()
-        if not path:
-            detected = self.autodetect_renderer_path(log=False)
-            if detected:
-                self.renderer_path_entry.set_text(str(detected))
-                path = str(detected)
-        self.renderer_auto_status.set_text(f"{renderer.upper()}: {path if path else 'nessun componente locale rilevato'}")
-
-    def autodetect_renderer_path(self, log=True):
-        idx = self.renderer_combo.get_selected()
-        renderer = RENDERERS[idx] if idx < len(RENDERERS) else "wined3d"
-        if renderer in ("auto", "wined3d"):
-            return None
-        required = {"dxvk": {"d3d11.dll", "dxgi.dll"}, "d7vk": {"ddraw.dll"}, "dgvoodoo": {"ddraw.dll"}}.get(renderer, set())
-        if not required:
-            return None
-        candidates = []
-        home = Path.home()
-        candidates += [home / ".local/share/pc-game-manager/dxvk", home / ".local/share/pc-game-manager/d7vk", Path("/usr/share/dxvk"), Path("/usr/share/d7vk"), Path("/opt/dxvk"), Path("/opt/d7vk")]
-        pacman = shutil.which("pacman")
-        if pacman:
-            try:
-                out = subprocess.check_output([pacman, "-Ql", "dxvk" if renderer == "dxvk" else "d7vk"], text=True, stderr=subprocess.DEVNULL) if renderer in ("dxvk", "d7vk") else ""
-                candidates += [Path(line.split(None, 1)[1]) for line in out.splitlines() if " " in line and Path(line.split(None, 1)[1]).exists()]
-            except Exception:
-                pass
-        for base in candidates:
-            if base.is_file() and base.name.lower() in {x.lower() for x in required}:
-                base = base.parent
-            if base.is_dir():
-                found = {p.name.lower() for p in base.rglob("*.dll") if p.is_file()}
-                if required.issubset(found):
-                    self.renderer_path_entry.set_text(str(base))
-                    self.renderer_auto_status.set_text(f"{renderer.upper()} rilevato: {base}")
-                    if log: self.log(f"Renderer {renderer} rilevato in {base}")
-                    return base
-        if log: self.log(f"Nessun componente {renderer.upper()} locale rilevato; puoi indicare manualmente la directory DLL.")
-        self.renderer_auto_status.set_text(f"{renderer.upper()}: nessun componente locale rilevato")
-        return None
-
-    def _run_selected_file(self, mode: str):
-        if not self.current_profile:
-            return self.log("Crea/seleziona un profilo prima di eseguire un installer o EXE.")
-        host = self.prefix_exe.get_text().strip()
-        if not host:
-            return self.log("Seleziona un EXE/installer.")
-        helper = shutil.which("pc-game-sandbox") or str(BASE / "bin" / "pc-game-sandbox")
-        self.save_profile(None)
-        self._spawn_logged([helper, "run-file", str(self.current_profile), host], mode)
-
-    def _profile_data_from_ui(self) -> dict:
-        d = dict(self.profile)
-        d.update({"name": self.p_name.get_text().strip(), "game_root": self.p_game.get_text().strip(), "executable": self.p_exe.get_text().strip(), "prefix_root": self.p_prefix.get_text().strip(), "sandbox_home": self.p_home.get_text().strip(), "save_root": self.p_saves.get_text().strip()})
-        d["wine_arch"] = ARCHES[self.p_arch_combo.get_selected() if self.p_arch_combo.get_selected() < len(ARCHES) else 0]
-        wi = self.p_windows_combo.get_selected() if self.p_windows_combo.get_selected() < len(WINDOWS) else 1
-        d["windows_version"] = WINDOWS[wi][1]
-        d["game_root_readonly"] = self.game_root_ro.get_active()
-        i = self.gpu_combo.get_selected(); gpu = self.gpu_devices[i] if i < len(self.gpu_devices) else self.gpu_devices[0]; d["gpu"] = {k: gpu[k] for k in ("mode", "pci", "vendor_device", "model") if k in gpu}
-        d["renderer"] = RENDERERS[self.renderer_combo.get_selected() if self.renderer_combo.get_selected() < len(RENDERERS) else 1]; d["renderer_path"] = self.renderer_path_entry.get_text().strip(); d["vkd3d_enabled"] = self.vkd3d_enable.get_active(); d["vkd3d_path"] = self.vkd3d_path_entry.get_text().strip(); d["nvapi_enabled"] = self.nvapi_enable.get_active(); d["nvapi_path"] = self.nvapi_path_entry.get_text().strip(); d["display_backend"] = ("auto", "wayland", "xwayland")[self.display_backend_combo.get_selected() if self.display_backend_combo.get_selected() < 3 else 0]; d["xwayland_fallback"] = self.xwayland_fallback_cb.get_active(); d.setdefault("wayland_input_status", self.profile.get("wayland_input_status", "unknown") if isinstance(self.profile, dict) else "unknown"); d.setdefault("wayland_input_reason", self.profile.get("wayland_input_reason", "") if isinstance(self.profile, dict) else ""); d["prefer_wayland"] = d["display_backend"] != "xwayland"; d["network"] = "host" if self.network_combo.get_selected() == 1 else "none"; d["audio_backend"] = "pulse" if self.audio_combo.get_selected() == 0 else "disabled"; d["capabilities"] = {k: cb.get_active() for k, cb in self.cap_checks.items()}; d["capabilities"]["audio"] = self.audio_cap.get_active()
-        return d
-
-    def apply_wine_profile_settings(self, _b):
-        if not self.current_profile:
-            return self.log("Seleziona un profilo.")
-        old_arch = str(self.profile.get("wine_arch", "win64"))
-        new_arch = ARCHES[self.p_arch_combo.get_selected() if self.p_arch_combo.get_selected() < len(ARCHES) else 0]
-        self.save_profile(None)
-        if old_arch != new_arch:
-            self.log("Architettura prefix modificata: per passare tra win64 e win32 usa Rebuild. La modifica Ã¨ stata salvata ma non applicata al prefix esistente.")
-            return
-        helper = shutil.which("pc-game-sandbox") or str(BASE / "bin" / "pc-game-sandbox")
-        self._spawn_logged([helper, "prefix-create", str(self.current_profile)], "wine-settings")
-
-    def disable_external_renderer(self, _b=None):
-        self.renderer_combo.set_selected(1)
-        self.renderer_path_entry.set_text("")
-        self.renderer_auto_status.set_text("Nessun renderer esterno: WineD3D")
-        if self.current_profile:
-            self.save_profile(None)
-
-    def clear_graphics_addons(self, _b=None):
-        self.vkd3d_enable.set_active(False)
-        self.vkd3d_path_entry.set_text("")
-        self.nvapi_enable.set_active(False)
-        self.nvapi_path_entry.set_text("")
-        self.log("Componenti grafici opzionali disattivati e deselezionati.")
-        if self.current_profile:
-            self.save_profile(None)
-
-    def _sandbox_policy_changed(self, *_args):
-        self._refresh_sandbox_policy_info()
-
-    def _refresh_sandbox_policy_info(self):
-        if not hasattr(self, "sandbox_policy_info"):
-            return
-        lines = ["HOME host e D-Bus host: non esposti. Runtime e sistema: sola lettura."]
-        if hasattr(self, "game_root_ro") and self.game_root_ro.get_active():
-            lines.append("Directory gioco: sola lettura; prefix, HOME sandbox e salvataggi restano scrivibili.")
-        else:
-            lines.append("âš  Directory gioco: scrivibile per compatibilitÃ  legacy.")
-        if hasattr(self, "network_combo") and self.network_combo.get_selected() == 1:
-            lines.append("âš  Rete: namespace host condiviso; il gioco puÃ² raggiungere Internet e dispositivi LAN.")
-        else:
-            lines.append("Rete: namespace isolato, nessun accesso Internet/LAN.")
-        if hasattr(self, "display_backend_combo"):
-            backend = self.display_backend_combo.get_selected()
-            status = str(self.profile.get("wayland_input_status", "unknown")) if isinstance(self.profile, dict) else "unknown"
-            xwayland_effective = backend == 2 or (backend == 0 and status == "broken")
-            if xwayland_effective:
-                lines.append("âš  XWayland: IPC host condiviso per compatibilitÃ  MIT-SHM; gli altri namespace restano isolati.")
-            elif backend == 0:
-                lines.append("Display Auto: Wayland usa IPC isolato; un fallback XWayland puÃ² condividere IPC se necessario.")
-            else:
-                lines.append("Wayland nativo: IPC isolato.")
-        self.sandbox_policy_info.set_text("\n".join(lines))
-
-    def save_profile(self, _b):
-        if not self.current_profile: self.log("Seleziona un profilo."); return
-        self.profile = self._profile_data_from_ui(); self.current_profile.write_text(json.dumps(self.profile, indent=2), encoding="utf-8"); self.log(f"Profilo salvato: {self.current_profile.name}")
-
-    def changed_save(self, *_):
-        if not self._loading: pass
-
-    def delete_profile(self, _b):
-        if not self.current_profile: return self.log("Seleziona un profilo.")
-        p = self.current_profile; data = self.profile; win = Gtk.Window(title="Elimina profilo", transient_for=self, modal=True, default_width=520, default_height=220); box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12); box.set_margin_top(16); box.set_margin_bottom(16); box.set_margin_start(16); box.set_margin_end(16); win.set_child(box); box.append(Gtk.Label(label=f"Eliminare {p.stem}? Il gioco originale non verrÃ  toccato.", wrap=True, xalign=0)); deldata = Gtk.CheckButton(label="Elimina anche prefix, HOME e salvataggi"); box.append(deldata); r = Gtk.Box(spacing=8); box.append(r); c = Gtk.Button(label="Annulla"); c.connect("clicked", lambda _b: win.close()); r.append(c); ok = Gtk.Button(label="Elimina"); ok.add_css_class("destructive-action"); r.append(ok)
-        def do(_):
-            try:
-                if p.exists(): p.unlink()
-                if deldata.get_active():
-                    for key in ("prefix_root", "sandbox_home", "save_root"):
-                        q = Path(str(data.get(key, ""))).expanduser()
-                        if q.is_dir() and len(q.parts) >= 4 and q not in (Path.home(), Path("/")): shutil.rmtree(q)
-                self.current_profile = None; self.profile = {}; win.close(); self.load_profiles(); self.log(f"Profilo eliminato: {p.name}")
-            except Exception as exc: self.log(f"Eliminazione fallita: {exc}")
-        ok.connect("clicked", do); win.present()
-
-    def rebuild_profile(self, _b):
-        if not self.current_profile: return self.log("Seleziona un profilo.")
-        self.save_profile(None); self.bootstrap_and_deps(self.current_profile, self.profile.get("dependencies", []), True)
-
-    def run_sandbox(self, args: list[str], tag: str, network=False):
-        if not self.current_profile: return self.log("Seleziona un profilo.")
-        helper = shutil.which("pc-game-sandbox") or str(BASE / "bin" / "pc-game-sandbox")
-        self._spawn_logged([helper, *args, str(self.current_profile)], tag)
-
-    def _spawn_logged(self, cmd: list[str], tag: str):
-        self.log(f"$ {' '.join(cmd)}")
-        def worker():
-            try:
-                p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-                if p.stdout:
-                    for line in p.stdout: GLib.idle_add(self.log, f"[{tag}] {line.rstrip()}")
-                code = p.wait(); GLib.idle_add(self.log, f"[{tag}] exit={code}")
-            except Exception as exc: GLib.idle_add(self.log, f"[{tag}] {exc}")
-        threading.Thread(target=worker, daemon=True).start()
-
-    def bootstrap_and_deps(self, path: Path, deps: list[str], bootstrap: bool):
-        helper = shutil.which("pc-game-sandbox") or str(BASE / "bin" / "pc-game-sandbox")
-        if bootstrap: self._spawn_logged([helper, "prefix-create", str(path)], "prefix")
-        if deps: self._spawn_logged([helper, "deps", str(path), *deps], "deps")
-
-    def run_profile_tool(self, payload: list[str], tag: str):
-        helper = shutil.which("pc-game-sandbox") or str(BASE / "bin" / "pc-game-sandbox"); self._spawn_logged([helper, "wine", str(self.current_profile), "--", *payload], tag)
-
-    def launch_game(self, _b):
-        if not self.current_profile: return
-        self.save_profile(None); self._spawn_logged([(shutil.which("pc-game-sandbox") or str(BASE / "bin" / "pc-game-sandbox")), "run", str(self.current_profile)], "game")
-
-    def refresh_runtime_local(self, _b=None):
-        self.runner_local = discover_runners();
-        for child in self._children(self.runtime_list): self.runtime_list.remove(child)
-        for item in self.runner_local:
-            row = Gtk.ListBoxRow(); row._runner = item; row.set_child(Gtk.Label(label=f"{item['name']} â€” {item['kind']} â€” {item['source']}\n{item['path']}", xalign=0, wrap=True)); self.runtime_list.append(row)
-        labels = ["Wine di sistema"] + [f"{x['name']} â€” {x['source']}" for x in self.runner_local if x.get('kind') != 'wine-system']
-        self.runtime_choice.set_model(Gtk.StringList.new(labels)); self.runtime_choice.set_selected(0)
-        self.runtime_status.set_text(f"Runtime locali rilevati: {len(self.runner_local)}")
-        self._restore_runtime_choice()
-
-    def _children(self, widget):
-        out=[]; c=widget.get_first_child()
-        while c: out.append(c); c=c.get_next_sibling()
-        return out
-
-    def _restore_runtime_choice(self):
-        target = self.profile.get('selected_runner') if isinstance(self.profile, dict) else None
-        if not isinstance(target, dict): self.runtime_choice.set_selected(0); return
-        for i, item in enumerate([x for x in self.runner_local if x.get('kind') != 'wine-system'], start=1):
-            if item.get('path') == target.get('path'):
-                self.runtime_choice.set_selected(i); return
-        self.runtime_choice.set_selected(0)
-
-    def runtime_choice_changed(self, *_):
-        if self._loading or not self.current_profile: return
-        idx = self.runtime_choice.get_selected()
-        candidates = [x for x in self.runner_local if x.get('kind') != 'wine-system']
-        self.profile['selected_runner'] = None if idx == 0 or idx-1 >= len(candidates) else candidates[idx-1]
-        self.save_profile(None)
-
-    def refresh_catalog(self, _b=None):
-        self.catalog_status.set_text("Aggiornamento catalogo remotoâ€¦")
-        def worker():
-            items, errors = catalog_all(); GLib.idle_add(self.show_catalog, items, errors)
-        threading.Thread(target=worker, daemon=True).start()
-
-    def show_catalog(self, items, errors):
-        self.runner_catalog = items
-        for child in list(self.catalog_list): self.catalog_list.remove(child)
-        for item in items:
-            row = Gtk.ListBoxRow(); row._runner = item; row.set_child(Gtk.Label(label=f"{item.get('name')} Â· {item.get('family', item.get('kind',''))} Â· {item.get('source','')}\n{item.get('filename', 'manifest remoto')}", xalign=0, wrap=True)); self.catalog_list.append(row)
-        self.catalog_status.set_text(f"Catalogo remoto: {len(items)} runtime disponibili" + (f" â€” {len(errors)} provider non raggiungibili" if errors else "")); self.log("Catalogo runtime aggiornato."); return False
-
-    def install_selected_runtime(self, _b):
-        row = self.catalog_list.get_selected_row()
-        if not row: return self.log("Seleziona un runtime dal catalogo.")
-        item = row._runner; base = Path.home() / ".local/share/pc-game-manager/runners"
-        def worker():
-            try:
-                p = download_and_install(item, base); GLib.idle_add(self.log, f"Runtime installato: {p}"); GLib.idle_add(self.refresh_runtime_local)
-            except Exception as exc: GLib.idle_add(self.log, f"Installazione runtime fallita: {exc}")
-        threading.Thread(target=worker, daemon=True).start()
-
-    def remove_selected_runtime(self, _b):
-        row = self.runtime_list.get_selected_row()
-        if not row: return self.log("Seleziona un runtime locale.")
-        item = row._runner
-        if item.get("kind") == "wine-system" or item.get("source") == "Sistema": return self.log("Il runtime di sistema non puÃ² essere disinstallato da qui.")
-        p = Path(item["path"])
-        try: shutil.rmtree(p); self.log(f"Runtime rimosso: {p}"); self.refresh_runtime_local()
-        except Exception as exc: self.log(f"Rimozione runtime fallita: {exc}")
-
-    def refresh_renderer_local(self, _b=None):
-        self.renderer_local = discover_renderers()
-        for child in self._children(self.renderer_local_list): self.renderer_local_list.remove(child)
-        for item in self.renderer_local:
-            row = Gtk.ListBoxRow(); row._renderer = item
-            row.set_child(Gtk.Label(label=f"{item['kind'].upper()} {item['version']}\n{item['path']}", xalign=0, wrap=True))
-            self.renderer_local_list.append(row)
-        self.renderer_local_status.set_text(f"Renderer installati da PC Game Manager: {len(self.renderer_local)}")
-        return False
-
-    def refresh_renderer_catalog(self, _b=None):
-        self.renderer_catalog_status.set_text("Aggiornamento catalogo graficoâ€¦")
-        def worker():
-            items, errors = renderer_catalog_all(); GLib.idle_add(self.show_renderer_catalog, items, errors)
-        threading.Thread(target=worker, daemon=True).start()
-
-    def show_renderer_catalog(self, items, errors):
-        self.renderer_catalog = items
-        for child in self._children(self.renderer_catalog_list): self.renderer_catalog_list.remove(child)
-        for item in items:
-            row = Gtk.ListBoxRow(); row._renderer = item
-            row.set_child(Gtk.Label(label=f"{item.get('kind','').upper()} Â· {item.get('version','')} Â· {item.get('source','')}\n{item.get('filename','')}", xalign=0, wrap=True))
-            self.renderer_catalog_list.append(row)
-        suffix = f" â€” {len(errors)} fonte/i non raggiungibili" if errors else ""
-        self.renderer_catalog_status.set_text(f"Catalogo renderer: {len(items)} release disponibili{suffix}")
-        for err in errors: self.log(f"Catalogo renderer: {err}")
-        return False
-
-    def install_selected_renderer(self, _b):
-        row = self.renderer_catalog_list.get_selected_row()
-        if not row: return self.log("Seleziona un componente grafico dal catalogo.")
-        item = row._renderer
-        self.log(f"Installazione {item.get('kind','').upper()} {item.get('version','')}â€¦")
-        def worker():
-            try:
-                path = install_renderer(item)
-                GLib.idle_add(self.log, f"Renderer installato: {path}")
-                GLib.idle_add(self.refresh_renderer_local)
-            except Exception as exc:
-                GLib.idle_add(self.log, f"Installazione renderer fallita: {exc}")
-        threading.Thread(target=worker, daemon=True).start()
-
-    def use_selected_renderer(self, _b):
-        row = self.renderer_local_list.get_selected_row()
-        if not row: return self.log("Seleziona un renderer locale.")
-        item = row._renderer
-        kind = item.get("kind")
-        if kind == "vkd3d":
-            self.vkd3d_enable.set_active(True); self.vkd3d_path_entry.set_text(item["path"])
-        elif kind == "dxvk-nvapi":
-            self.nvapi_enable.set_active(True); self.nvapi_path_entry.set_text(item["path"])
-        else:
-            idx = {"dxvk": 2, "d7vk": 3, "dgvoodoo": 4}.get(kind, 1)
-            self.renderer_combo.set_selected(idx); self.renderer_path_entry.set_text(item["path"])
-            self.renderer_auto_status.set_text(f"{kind.upper()} selezionato: {item['version']}")
-        self.log(f"Componente grafico selezionato: {kind.upper()} {item['version']}")
-        if self.current_profile: self.save_profile(None)
-
-    def remove_selected_renderer(self, _b):
-        row = self.renderer_local_list.get_selected_row()
-        if not row: return self.log("Seleziona un renderer locale.")
-        item = row._renderer
-        try:
-            remove_renderer(item["path"])
-            self.log(f"Renderer rimosso: {item['path']}")
-            if self.renderer_path_entry.get_text().strip() == item["path"]:
-                self.renderer_path_entry.set_text("")
-            self.refresh_renderer_local()
-            self._renderer_changed()
-        except Exception as exc:
-            self.log(f"Rimozione renderer fallita: {exc}")
-
-    def install_retro_codec(self, _b):
-        if not self.current_profile: return self.log("Seleziona un profilo.")
-        verbs = ["allcodecs", "icodecs", "cinepak", "l3codecx", "ffdshow", "xvid", "lavfilters", "quartz", "amstream", "avifil32", "binkw32"]
-        idx = self.retro_codec_combo.get_selected()
-        if idx >= len(verbs): idx = 0
-        verb = verbs[idx]
-        helper = shutil.which("pc-game-sandbox") or str(BASE / "bin" / "pc-game-sandbox")
-        self.log(f"Installazione codec retro: {verb}")
-        self._spawn_logged([helper, "deps", str(self.current_profile), verb], f"codec:{verb}")
-
-    def install_dependencies(self, _b):
-        if not self.current_profile: return self.log("Seleziona un profilo.")
-        deps = [getattr(row.get_child(), "_dep_key", None) for row in self.dep_list if False]
-        deps = []
-        row = self.dep_list.get_first_child()
-        while row:
-            cb = row.get_child()
-            if isinstance(cb, Gtk.CheckButton) and cb.get_active(): deps.append(getattr(cb, "_dep_key", ""))
-            row = row.get_next_sibling()
-        custom = self.dep_input.get_text().strip()
-        if custom: deps.extend(custom.split())
-        deps = [x for x in deps if x]
-        if not deps: return self.log("Nessuna dipendenza selezionata.")
-        self._spawn_logged([(shutil.which("pc-game-sandbox") or str(BASE / "bin" / "pc-game-sandbox")), "deps", str(self.current_profile), *deps], "deps")
-
-    def rebuild_and_deps(self, _b):
-        if not self.current_profile: return
-        self.save_profile(None)
-        helper = shutil.which("pc-game-sandbox") or str(BASE / "bin" / "pc-game-sandbox")
-        deps = list(self.profile.get("dependencies", []))
-        def worker():
-            try:
-                for cmd, tag in (([helper, "prefix-create", str(self.current_profile), "--rebuild"], "prefix"),):
-                    self.log(f"$ {' '.join(cmd)}")
-                    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-                    if p.stdout:
-                        for line in p.stdout: GLib.idle_add(self.log, f"[{tag}] {line.rstrip()}")
-                    code = p.wait()
-                    if code != 0:
-                        GLib.idle_add(self.log, f"[prefix] exit={code}; dipendenze non installate")
-                        return
-                if deps:
-                    cmd = [helper, "deps", str(self.current_profile), *deps]; self.log(f"$ {' '.join(cmd)}")
-                    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-                    if p.stdout:
-                        for line in p.stdout: GLib.idle_add(self.log, f"[deps] {line.rstrip()}")
-                    GLib.idle_add(self.log, f"[deps] exit={p.wait()}")
-            except Exception as exc: GLib.idle_add(self.log, f"[rebuild] {exc}")
-        threading.Thread(target=worker, daemon=True).start()
-
-    def refresh_dependencies(self):
-        selected = set(self.profile.get("dependencies", [])); row = self.dep_list.get_first_child()
-        while row:
-            cb = row.get_child()
-            if isinstance(cb, Gtk.CheckButton): cb.set_active(getattr(cb, "_dep_key", "") in selected)
-            row = row.get_next_sibling()
-
-    def add_access(self, readonly: bool, directory: bool):
-        cb = lambda d, r: self._finish_access(d, r, readonly, directory)
-        (Gtk.FileDialog().select_folder(self, None, cb) if directory else Gtk.FileDialog().open(self, None, cb))
-
-    def _finish_access(self, d, r, readonly, directory):
-        try: obj = d.select_folder_finish(r) if directory else d.open_finish(r); path = obj.get_path()
-        except GLib.Error: return
-        item = {"path": str(Path(path).resolve()), "target": "/install/" + safe_name(Path(path).name), "readonly": readonly}; self.profile.setdefault("allowed_paths", []).append(item); self.save_profile(None); self.refresh_access()
-
-    def refresh_access(self):
-        for c in self._children(self.access_list): self.access_list.remove(c)
-        for item in self.profile.get("allowed_paths", []):
-            row = Gtk.ListBoxRow(); row._item = item; row.set_child(Gtk.Label(label=f"[{ 'RO' if item.get('readonly', True) else 'RW' }] {item.get('path')} â†’ {item.get('target')}", xalign=0, wrap=True)); self.access_list.append(row)
-
-    def remove_access(self, _b):
-        row = self.access_list.get_selected_row()
-        if row:
-            self.profile.get("allowed_paths", []).remove(row._item); self.save_profile(None); self.refresh_access()
-
-    def add_disc(self, _b):
-        p = self.disc_entry.get_text().strip()
-        if not p: return
-        self.profile.setdefault("discs", []).append({"image": str(Path(p).expanduser().resolve())}); self.save_profile(None); self.refresh_discs(); self.disc_entry.set_text("")
-
-    def remove_disc(self, _b):
-        ds = self.profile.setdefault("discs", []); 
-        if ds: ds.pop(); self.save_profile(None); self.refresh_discs()
-
-    def refresh_discs(self):
-        self.disc_status.set_text("Dischi associati: " + str(len(self.profile.get("discs", []))))
-
-    def run_host_test_audio(self):
-        helper = shutil.which("pc-game-sandbox") or str(BASE / "bin" / "pc-game-sandbox")
-        if not self.current_profile: return self.log("Il test audio richiede un profilo creato e selezionato.")
-        self.audio_info.set_text("Test audio avviato; controlla anche il tab Log.")
-        self._spawn_logged([helper, "diag", str(self.current_profile), "--", "sh", "-lc", "pactl info && paplay /usr/share/sounds/freedesktop/stereo/complete.oga"], "audio")
-
-
-def RENDITER_INDEX(value: str) -> int:
-    try: return RENDERERS.index(value)
-    except ValueError: return 1
-
-
-class ManagerApp(Gtk.Application):
-    def __init__(self): super().__init__(application_id=APP_ID)
-    def do_activate(self): ManagerWindow(self).present()
-
-
-if __name__ == "__main__":
-    ManagerApp().run(sys.argv)
+        self.launch_status.set_text(f"{self.p_name.get_text()} â€” {sÍ•±˜¹Á}•á”¹•Ñ}Ñ•áÐ ¥ôˆ¤ìÍ•±˜¹±½œ¡˜‰AÉ½™¥±¼…É¥…Ñ¼èíÉ½Ü¹}Á…Ñ ¹¹…µ•ôˆ¤((€€€‘•˜}É•™É•Í¡}Ý…å±…¹‘}ÍÑ…ÑÕÌ¡Í•±˜¤è(€€€€€€€¥˜¹½Ð¡…Í…ÑÑÈ¡Í•±˜°€‰Ý…å±…¹‘}ÍÑ…ÑÕÍ}±…‰•°ˆ¤è(€€€€€€€€€€€É•ÑÕÉ¸(€€€€€€€ÍÑ…ÑÕÌ€ôÍÑÈ¡Í•±˜¹ÁÉ½™¥±”¹•Ð ‰Ý…å±…¹‘}¥¹ÁÕÑ}ÍÑ…ÑÕÌˆ°€‰Õ¹­¹½Ý¸ˆ¤¤¥˜¥Í¥¹ÍÑ…¹”¡Í•±˜¹ÁÉ½™¥±”°‘¥Ð¤•±Í”€‰Õ¹­¹½Ý¸ˆ(€€€€€€€É•…Í½¸€ôÍÑÈ¡Í•±˜¹ÁÉ½™¥±”¹•Ð ‰Ý…å±…¹‘}¥¹ÁÕÑ}É•…Í½¸ˆ°€ˆˆ¤¤¹ÍÑÉ¥À ¤¥˜¥Í¥¹ÍÑ…¹”¡Í•±˜¹ÁÉ½™¥±”°‘¥Ð¤•±Í”€ˆˆ(€€€€€€€±…‰•±Ì€ôì‰Ý½É­¥¹œˆè€‰™Õ¹é¥½¹…¹Ñ”ˆ°€‰‰É½­•¸ˆè€‰9=8™Õ¹é¥½¹…¹Ñ”ˆ°€‰Õ¹­¹½Ý¸ˆè€‰¹½¸Ù•É¥™¥…Ñ¼‰ô(€€€€€€€Ñ•áÐ€ô˜‰MÑ…Ñ¼¥¹ÁÕÐ]…å±…¹èí±…‰•±Ì¹•Ð¡ÍÑ…ÑÕÌ°ÍÑ…ÑÕÌ¥ôˆ(€€€€€€€¥˜É•…Í½¸è(€€€€€€€€€€€Ñ•áÐ€¬ô˜ˆƒŠPíÉ•…Í½¹ôˆ(€€€€€€€¥˜ÍÑ…ÑÕÌ€ôô€‰‰É½­•¸ˆè(€€€€€€€€€€€Ñ•áÐ€¬ô€ˆƒŠPÕÑ¼ÕÍ•Ë€a]…å±…¹ˆ(€€€€€€€Í•±˜¹Ý…å±…¹‘}ÍÑ…ÑÕÍ}±…‰•°¹Í•Ñ}Ñ•áÐ¡Ñ•áÐ¤((€€€‘•˜}Í•Ñ}Ý…å±…¹‘}ÍÑ…ÑÕÌ¡Í•±˜°ÍÑ…ÑÕÌèÍÑÈ°É•…Í½¸èÍÑÈ€ô€ˆˆ¤è(€€€€€€€¥˜¹½ÐÍ•±˜¹ÕÉÉ•¹Ñ}ÁÉ½™¥±”è(€€€€€€€€€€€É•ÑÕÉ¸Í•±˜¹±½œ ‰M•±•é¥½¹„Õ¸ÁÉ½™¥±¼¸ˆ¤(€€€€€€€Í•±˜¹ÁÉ½™¥±•l‰Ý…å±…¹‘}¥¹ÁÕÑ}ÍÑ…ÑÕÌ‰t€ôÍÑ…ÑÕÌ(€€€€€€€Í•±˜¹ÁÉ½™¥±•l‰Ý…å±…¹‘}¥¹ÁÕÑ}É•…Í½¸‰t€ôÉ•…Í½¸(€€€€€€€Í•±˜¹ÕÉÉ•¹Ñ}ÁÉ½™¥±”¹ÝÉ¥Ñ•}Ñ•áÐ¡©Í½¸¹‘ÕµÁÌ¡Í•±˜¹ÁÉ½™¥±”°¥¹‘•¹ÐôÈ¤°•¹½‘¥¹œô‰ÕÑ˜´àˆ¤(€€€€€€€Í•±˜¹}É•™É•Í¡}Ý…å±…¹‘}ÍÑ…ÑÕÌ ¤(€€€€€€€Í•±˜¹±½œ¡˜‰]…å±…¹¥¹ÁÕÐÁ•ÈíÍ•±˜¹ÕÉÉ•¹Ñ}ÁÉ½™¥±”¹¹…µ•ôèíÍÑ…ÑÕÍôˆ€¬€¡˜ˆƒŠPíÉ•…Í½¹ôˆ¥˜É•…Í½¸•±Í”€ˆˆ¤¤((€€€‘•˜µ…É­}Ý…å±…¹‘}‰É½­•¸¡Í•±˜°}ˆõ9½¹”¤è(€€€€€€€Í•±˜¹}Í•Ñ}Ý…å±…¹‘}ÍÑ…ÑÕÌ ‰‰É½­•¸ˆ°€‰¥¹ÁÕÐÑ…ÍÑ¥•É„¹½¸‘¥ÍÁ½¹¥‰¥±”½¸]¥¹•]…å±…¹Á•ÈÅÕ•ÍÑ¼¥½¼ˆ¤((€€€‘•˜µ…É­}Ý…å±…¹‘}Ý½É­¥¹œ¡Í•±˜°}ˆõ9½¹”¤è(€€€€€€€Í•±˜¹}Í•Ñ}Ý…å±…¹‘}ÍÑ…ÑÕÌ ‰Ý½É­¥¹œˆ°€‰¥¹ÁÕÐÑ…ÍÑ¥•É„Ù•É¥™¥…Ñ¼½¸]¥¹•]…å±…¹ˆ¤((€€€‘•˜É•ÑÉå}Ý…å±…¹¡Í•±˜°}ˆõ9½¹”¤è(€€€€€€€Í•±˜¹}Í•Ñ}Ý…å±…¹‘}ÍÑ…ÑÕÌ ‰Õ¹­¹½Ý¸ˆ°€ˆˆ¤(€€€€€€€Í•±˜¹±½œ ‰]…å±…¹Ù•ÉË€É¥Ñ•¹Ñ…Ñ¼…°ÁÉ½ÍÍ¥µ¼…ÙÙ¥¼¥¸µ½‘…±¥Ó ÕÑ¼¸ˆ¤((€€€‘•˜‘•‰Õ}Ý…å±…¹‘}¥¹ÁÕÐ¡Í•±˜°}ˆõ9½¹”¤è(€€€€€€€¥˜¹½ÐÍ•±˜¹ÕÉÉ•¹Ñ}ÁÉ½™¥±”è(€€€€€€€€€€€É•ÑÕÉ¸Í•±˜¹±½œ ‰M•±•é¥½¹„Õ¸ÁÉ½™¥±¼¸ˆ¤(€€€€€€€Í•±˜¹Í…Ù•}ÁÉ½™¥±”¡9½¹”¤(€€€€€€€¡•±Á•È€ôÍ¡ÕÑ¥°¹Ý¡¥  ‰ÁŒµ…µ”µÍ…¹‘‰½àˆ¤½ÈÍÑÈ¡	M€¼€‰‰¥¸ˆ€¼€‰ÁŒµ…µ”µÍ…¹‘‰½àˆ¤(€€€€€€€Í•±˜¹}ÍÁ…Ý¹}±½•¡m¡•±Á•È°€‰¥¹ÁÕÐµ‘•‰Õœˆ°ÍÑÈ¡Í•±˜¹ÕÉÉ•¹Ñ}ÁÉ½™¥±”¥t°€‰Ý…å±…¹µ¥¹ÁÕÐˆ¤((€€€‘•˜}Í•±•Ñ}ÁÔ¡Í•±˜°ÁÔ¤è(€€€€€€€Í•±˜¹ÁÕ}½µ‰¼¹Í•Ñ}Í•±•Ñ• À¤(€€€€€€€¥˜ÁÔ¹•Ð ‰µ½‘”ˆ¤€ôô€‰Á¤ˆè(€€€€€€€€€€€™½È¤°¥¸•¹Õµ•É…Ñ”¡Í•±˜¹ÁÕ}‘•Ù¥•Ì¤è(€€€€€€€€€€€€€€€¥˜¹•Ð ‰Á¤ˆ¤€ôôÁÔ¹•Ð ‰Á¤ˆ¤…¹¹•Ð ‰Ù•¹‘½É}‘•Ù¥”ˆ¤€ôôÁÔ¹•Ð ‰Ù•¹‘½É}‘•Ù¥”ˆ¤èÍ•±˜¹ÁÕ}½µ‰¼¹Í•Ñ}Í•±•Ñ•¡¤¤ì‰É•…¬(€€€€€€€¥‘à€ôÍ•±˜¹ÁÕ}½µ‰¼¹•Ñ}Í•±•Ñ• ¤ì€ôÍ•±˜¹ÁÕ}‘•Ù¥•Ím¥‘át¥˜¥‘à€ð±•¸¡Í•±˜¹ÁÕ}‘•Ù¥•Ì¤•±Í”Í•±˜¹ÁÕ}‘•Ù¥•ÍlÁtìÍ•±˜¹ÁÕ}¥¹™¼¹Í•Ñ}Ñ•áÐ¡˜‰5½‘•±±¼èí¹•Ð µ½‘•°œ¥õq¹A$èí¹•Ð Á¤œ°€…ÕÑ¼œ¥õq¹Y•¹‘½Èé•Ù¥”èí¹•Ð Ù•¹‘½É}‘•Ù¥”œ°€…ÕÑ¼œ¥ôˆ¤((€€€‘•˜É•™É•Í¡}ÁÕÌ¡Í•±˜¤è(€€€€€€€Í•±˜¹ÁÕ}‘•Ù¥•Ì€ô‘•Ñ•Ñ}ÁÕÌ ¤ìÍ•±˜¹ÁÕ}½µ‰¼¹Í•Ñ}µ½‘•°¡Ñ¬¹MÑÉ¥¹1¥ÍÐ¹¹•Ü¡m‘l‰±…‰•°‰t™½È¥¸Í•±˜¹ÁÕ}‘•Ù¥•Ít¤¤ìÍ•±˜¹}Í•±•Ñ}ÁÔ¡Í•±˜¹ÁÉ½™¥±”¹•Ð ‰ÁÔˆ°ì‰µ½‘”ˆè€‰…ÕÑ¼‰ô¤¤ìÍ•±˜¹±½œ¡˜‰ATÉ¥±•Ù…Ñ”èíµ…à À°±•¸¡Í•±˜¹ÁÕ}‘•Ù¥•Ì¤´Ä¥ôˆ¤((€€€‘•˜}É•¹‘•É•É}¡…¹•¡Í•±˜°€©}…ÉÌ¤è(€€€€€€€¥˜Í•±˜¹}±½…‘¥¹œè(€€€€€€€€€€€É•ÑÕÉ¸(€€€€€€€¥‘à€ôÍ•±˜¹É•¹‘•É•É}½µ‰¼¹•Ñ}Í•±•Ñ• ¤(€€€€€€€É•¹‘•É•È€ôI9IIMm¥‘át¥˜¥‘à€ð±•¸¡I9IIL¤•±Í”€‰Ý¥¹”Í‘ˆ(€€€€€€€¥˜É•¹‘•É•È¥¸€ ‰…ÕÑ¼ˆ°€‰Ý¥¹”Í‘ˆ¤è(€€€€€€€€€€€Í•±˜¹É•¹‘•É•É}…ÕÑ½}ÍÑ…ÑÕÌ¹Í•Ñ}Ñ•áÐ ‰9•ÍÍÕ¹„10•ÍÑ•É¹„¹••ÍÍ…É¥„¸ˆ¤(€€€€€€€€€€€É•ÑÕÉ¸(€€€€€€€Á…Ñ €ôÍ•±˜¹É•¹‘•É•É}Á…Ñ¡}•¹ÑÉä¹•Ñ}Ñ•áÐ ¤¹ÍÑÉ¥À ¤(€€€€€€€¥˜¹½ÐÁ…Ñ è(€€€€€€€€€€€‘•Ñ•Ñ•€ôÍ•±˜¹…ÕÑ½‘•Ñ•Ñ}É•¹‘•É•É}Á…Ñ ¡±½œõ…±Í”¤(€€€€€€€€€€€¥˜‘•Ñ•Ñ•è(€€€€€€€€€€€€€€€Í•±˜¹É•¹‘•É•É}Á…Ñ¡}•¹ÑÉä¹Í•Ñ}Ñ•áÐ¡ÍÑÈ¡‘•Ñ•Ñ•¤¤(€€€€€€€€€€€€€€€Á…Ñ €ôÍÑÈ¡‘•Ñ•Ñ•¤(€€€€€€€Í•±˜¹É•¹‘•É•É}…ÕÑ½}ÍÑ…ÑÕÌ¹Í•Ñ}Ñ•áÐ¡˜‰íÉ•¹‘•É•È¹ÕÁÁ•È ¥ôèíÁ…Ñ ¥˜Á…Ñ •±Í”€¹•ÍÍÕ¸½µÁ½¹•¹Ñ”±½…±”É¥±•Ù…Ñ¼ôˆ¤((€€€‘•˜…ÕÑ½‘•Ñ•Ñ}É•¹‘•É•É}Á…Ñ ¡Í•±˜°±½œõQÉÕ”¤è(€€€€€€€¥‘à€ôÍ•±˜¹É•¹‘•É•É}½µ‰¼¹•Ñ}Í•±•Ñ• ¤(€€€€€€€É•¹‘•É•È€ôI9IIMm¥‘át¥˜¥‘à€ð±•¸¡I9IIL¤•±Í”€‰Ý¥¹”Í‘ˆ(€€€€€€€¥˜É•¹‘•É•È¥¸€ ‰…ÕÑ¼ˆ°€‰Ý¥¹”Í‘ˆ¤è(€€€€€€€€€€€É•ÑÕÉ¸9½¹”(€€€€€€€É•ÅÕ¥É•€ôì‰‘áÙ¬ˆèì‰ÍÄÄ¹‘±°ˆ°€‰‘á¤¹‘±°‰ô°€‰ÝÙ¬ˆèì‰‘‘É…Ü¹‘±°‰ô°€‰‘Ù½½‘½¼ˆèì‰‘‘É…Ü¹‘±°‰õô¹•Ð¡É•¹‘•É•È°Í•Ð ¤¤(€€€€€€€¥˜¹½ÐÉ•ÅÕ¥É•è(€€€€€€€€€€€É•ÑÕÉ¸9½¹”(€€€€€€€…¹‘¥‘…Ñ•Ì€ômt(€€€€€€€¡½µ”€ôA…Ñ ¹¡½µ” ¤(€€€€€€€…¹‘¥‘…Ñ•Ì€¬ôm¡½µ”€¼€ˆ¹±½…°½Í¡…É”½ÁŒµ…µ”µµ…¹…•È½‘áÙ¬ˆ°¡½µ”€¼€ˆ¹±½…°½Í¡…É”½ÁŒµ…µ”µµ…¹…•È½ÝÙ¬ˆ°A…Ñ  ˆ½ÕÍÈ½Í¡…É”½‘áÙ¬ˆ¤°A…Ñ  ˆ½ÕÍÈ½Í¡…É”½ÝÙ¬ˆ¤°A…Ñ  ˆ½½ÁÐ½‘áÙ¬ˆ¤°A…Ñ  ˆ½½ÁÐ½ÝÙ¬ˆ¥t(€€€€€€€Á…µ…¸€ôÍ¡ÕÑ¥°¹Ý¡¥  ‰Á…µ…¸ˆ¤(€€€€€€€¥˜Á…µ…¸è(€€€€€€€€€€€ÑÉäè(€€€€€€€€€€€€€€€½ÕÐ€ôÍÕ‰ÁÉ½•ÍÌ¹¡•­}½ÕÑÁÕÐ¡mÁ…µ…¸°€ˆµE°ˆ°€‰‘áÙ¬ˆ¥˜É•¹‘•É•È€ôô€‰‘áÙ¬ˆ•±Í”€‰ÝÙ¬‰t°Ñ•áÐõQÉÕ”°ÍÑ‘•ÉÈõÍÕ‰ÁÉ½•ÍÌ¹Y9U10¤¥˜É•¹‘•É•È¥¸€ ‰‘áÙ¬ˆ°€‰ÝÙ¬ˆ¤•±Í”€ˆˆ(€€€€€€€€€€€€€€€…¹‘¥‘…Ñ•Ì€¬ômA…Ñ ¡±¥¹”¹ÍÁ±¥Ð¡9½¹”°€Ä¥lÅt¤™½È±¥¹”¥¸½ÕÐ¹ÍÁ±¥Ñ±¥¹•Ì ¤¥˜€ˆ€ˆ¥¸±¥¹”…¹A…Ñ ¡±¥¹”¹ÍÁ±¥Ð¡9½¹”°€Ä¥lÅt¤¹•á¥ÍÑÌ ¥t(€€€€€€€€€€€•á•ÁÐá•ÁÑ¥½¸è(€€€€€€€€€€€€€€€Á…ÍÌ(€€€€€€€™½È‰…Í”¥¸…¹‘¥‘…Ñ•Ìè(€€€€€€€€€€€¥˜‰…Í”¹¥Í}™¥±” ¤…¹‰…Í”¹¹…µ”¹±½Ý•È ¤¥¸íà¹±½Ý•È ¤™½Èà¥¸É•ÅÕ¥É•‘ôè(€€€€€€€€€€€€€€€‰…Í”€ô‰…Í”¹Á…É•¹Ð(€€€€€€€€€€€¥˜‰…Í”¹¥Í}‘¥È ¤è(€€€€€€€€€€€€€€€™½Õ¹€ôíÀ¹¹…µ”¹±½Ý•È ¤™½ÈÀ¥¸‰…Í”¹É±½ˆ ˆ¨¹‘±°ˆ¤¥˜À¹¥Í}™¥±” ¥ô(€€€€€€€€€€€€€€€¥˜É•ÅÕ¥É•¹¥ÍÍÕ‰Í•Ð¡™½Õ¹¤è(€€€€€€€€€€€€€€€€€€€Í•±˜¹É•¹‘•É•É}Á…Ñ¡}•¹ÑÉä¹Í•Ñ}Ñ•áÐ¡ÍÑÈ¡‰…Í”¤¤(€€€€€€€€€€€€€€€€€€€Í•±˜¹É•¹‘•É•É}…ÕÑ½}ÍÑ…ÑÕÌ¹Í•Ñ}Ñ•áÐ¡˜‰íÉ•¹‘•É•È¹ÕÁÁ•È ¥ôÉ¥±•Ù…Ñ¼èí‰…Í•ôˆ¤(€€€€€€€€€€€€€€€€€€€¥˜±½œèÍ•±˜¹±½œ¡˜‰I•¹‘•É•ÈíÉ•¹‘•É•ÉôÉ¥±•Ù…Ñ¼¥¸í‰…Í•ôˆ¤(€€€€€€€€€€€€€€€€€€€É•ÑÕÉ¸‰…Í”(€€€€€€€¥˜±½œèÍ•±˜¹±½œ¡˜‰9•ÍÍÕ¸½µÁ½¹•¹Ñ”íÉ•¹‘•É•È¹ÕÁÁ•È ¥ô±½…±”É¥±•Ù…Ñ¼ìÁÕ½¤¥¹‘¥…É”µ…¹Õ…±µ•¹Ñ”±„‘¥É•Ñ½Éä10¸ˆ¤(€€€€€€€Í•±˜¹É•¹‘•É•É}…ÕÑ½}ÍÑ…ÑÕÌ¹Í•Ñ}Ñ•áÐ¡˜‰íÉ•¹‘•É•È¹ÕÁÁ•È ¥ôè¹•ÍÍÕ¸½µÁ½¹•¹Ñ”±½…±”É¥±•Ù…Ñ¼ˆ¤(€€€€€€€É•ÑÕÉ¸9½¹”((€€€‘•˜}ÉÕ¹}Í•±•Ñ•‘}™¥±”¡Í•±˜°µ½‘”èÍÑÈ¤è(€€€€€€€¥˜¹½ÐÍ•±˜¹ÕÉÉ•¹Ñ}ÁÉ½™¥±”è(€€€€€€€€€€€É•ÑÕÉ¸Í•±˜¹±½œ ‰É•„½Í•±•é¥½¹„Õ¸ÁÉ½™¥±¼ÁÉ¥µ„‘¤•Í•Õ¥É”Õ¸¥¹ÍÑ…±±•È¼a¸ˆ¤(€€€€€€€¡½ÍÐ€ôÍ•±˜¹ÁÉ•™¥á}•á”¹•Ñ}Ñ•áÐ ¤¹ÍÑÉ¥À ¤(€€€€€€€¥˜¹½Ð¡½ÍÐè(€€€€€€€€€€€É•ÑÕÉ¸Í•±˜¹±½œ ‰M•±•é¥½¹„Õ¸a½¥¹ÍÑ…±±•È¸ˆ¤(€€€€€€€¡•±Á•È€ôÍ¡ÕÑ¥°¹Ý¡¥  ‰ÁŒµ…µ”µÍ…¹‘‰½àˆ¤½ÈÍÑÈ¡	M€¼€‰‰¥¸ˆ€¼€‰ÁŒµ…µ”µÍ…¹‘‰½àˆ¤(€€€€€€€Í•±˜¹Í…Ù•}ÁÉ½™¥±”¡9½¹”¤(€€€€€€€Í•±˜¹}ÍÁ…Ý¹}±½•¡m¡•±Á•È°€‰ÉÕ¸µ™¥±”ˆ°ÍÑÈ¡Í•±˜¹ÕÉÉ•¹Ñ}ÁÉ½™¥±”¤°¡½ÍÑt°µ½‘”¤((€€€‘•˜}ÁÉ½™¥±•}‘…Ñ…}™É½µ}Õ¤¡Í•±˜¤€´ø‘¥Ðè(€€€€€€€€ô‘¥Ð¡Í•±˜¹ÁÉ½™¥±”¤(€€€€€€€¹ÕÁ‘…Ñ”¡ì‰¹…µ”ˆèÍ•±˜¹Á}¹…µ”¹•Ñ}Ñ•áÐ ¤¹ÍÑÉ¥À ¤°€‰…µ•}É½½ÐˆèÍ•±˜¹Á}…µ”¹•Ñ}Ñ•áÐ ¤¹ÍÑÉ¥À ¤°€‰•á•ÕÑ…‰±”ˆèÍ•±˜¹Á}•á”¹•Ñ}Ñ•áÐ ¤¹ÍÑÉ¥À ¤°€‰ÁÉ•™¥á}É½½ÐˆèÍ•±˜¹Á}ÁÉ•™¥à¹•Ñ}Ñ•áÐ ¤¹ÍÑÉ¥À ¤°€‰Í…¹‘‰½á}¡½µ”ˆèÍ•±˜¹Á}¡½µ”¹•Ñ}Ñ•áÐ ¤¹ÍÑÉ¥À ¤°€‰Í…Ù•}É½½ÐˆèÍ•±˜¹Á}Í…Ù•Ì¹•Ñ}Ñ•áÐ ¤¹ÍÑÉ¥À ¥ô¤(€€€€€€€‘l‰Ý¥¹•}…É ‰t€ôI!MmÍ•±˜¹Á}…É¡}½µ‰¼¹•Ñ}Í•±•Ñ• ¤¥˜Í•±˜¹Á}…É¡}½µ‰¼¹•Ñ}Í•±•Ñ• ¤€ð±•¸¡I!L¤•±Í”€Át(€€€€€€€Ý¤€ôÍ•±˜¹Á}Ý¥¹‘½ÝÍ}½µ‰¼¹•Ñ}Í•±•Ñ• ¤¥˜Í•±˜¹Á}Ý¥¹‘½ÝÍ}½µ‰¼¹•Ñ}Í•±•Ñ• ¤€ð±•¸¡]%9=]L¤•±Í”€Ä(€€€€€€€‘l‰Ý¥¹‘½ÝÍ}Ù•ÉÍ¥½¸‰t€ô]%9=]MmÝ¥ulÅt(€€€€€€€‘l‰…µ•}É½½Ñ}É•…‘½¹±ä‰t€ôÍ•±˜¹…µ•}É½½Ñ}É¼¹•Ñ}…Ñ¥Ù” ¤(€€€€€€€¤€ôÍ•±˜¹ÁÕ}½µ‰¼¹•Ñ}Í•±•Ñ• ¤ìÁÔ€ôÍ•±˜¹ÁÕ}‘•Ù¥•Ím¥t¥˜¤€ð±•¸¡Í•±˜¹ÁÕ}‘•Ù¥•Ì¤•±Í”Í•±˜¹ÁÕ}‘•Ù¥•ÍlÁtì‘l‰ÁÔ‰t€ôí¬èÁÕm­t™½È¬¥¸€ ‰µ½‘”ˆ°€‰Á¤ˆ°€‰Ù•¹‘½É}‘•Ù¥”ˆ°€‰µ½‘•°ˆ¤¥˜¬¥¸ÁÕô(€€€€€€€‘l‰É•¹‘•É•È‰t€ôI9IIMmÍ•±˜¹É•¹‘•É•É}½µ‰¼¹•Ñ}Í•±•Ñ• ¤¥˜Í•±˜¹É•¹‘•É•É}½µ‰¼¹•Ñ}Í•±•Ñ• ¤€ð±•¸¡I9IIL¤•±Í”€Åtì‘l‰É•¹‘•É•É}Á…Ñ ‰t€ôÍ•±˜¹É•¹‘•É•É}Á…Ñ¡}•¹ÑÉä¹•Ñ}Ñ•áÐ ¤¹ÍÑÉ¥À ¤ì‘l‰Ù­Í‘}•¹…‰±•‰t€ôÍ•±˜¹Ù­Í‘}•¹…‰±”¹•Ñ}…Ñ¥Ù” ¤ì‘l‰Ù­Í‘}Á…Ñ ‰t€ôÍ•±˜¹Ù­Í‘}Á…Ñ¡}•¹ÑÉä¹•Ñ}Ñ•áÐ ¤¹ÍÑÉ¥À ¤ì‘l‰¹Ù…Á¥}•¹…‰±•‰t€ôÍ•±˜¹¹Ù…Á¥}•¹…‰±”¹•Ñ}…Ñ¥Ù” ¤ì‘l‰¹Ù…Á¥}Á…Ñ ‰t€ôÍ•±˜¹¹Ù…Á¥}Á…Ñ¡}•¹ÑÉä¹•Ñ}Ñ•áÐ ¤¹ÍÑÉ¥À ¤ì‘l‰‘¥ÍÁ±…å}‰…­•¹‰t€ô€ ‰…ÕÑ¼ˆ°€‰Ý…å±…¹ˆ°€‰áÝ…å±…¹ˆ¥mÍ•±˜¹‘¥ÍÁ±…å}‰…­•¹‘}½µ‰¼¹•Ñ}Í•±•Ñ• ¤¥˜Í•±˜¹‘¥ÍÁ±…å}‰…­•¹‘}½µ‰¼¹•Ñ}Í•±•Ñ• ¤€ð€Ì•±Í”€Átì‘l‰áÝ…å±…¹‘}™…±±‰…¬‰t€ôÍ•±˜¹áÝ…å±…¹‘}™…±±‰…­}ˆ¹•Ñ}…Ñ¥Ù” ¤ì¹Í•Ñ‘•™…Õ±Ð ‰Ý…å±…¹‘}¥¹ÁÕÑ}ÍÑ…ÑÕÌˆ°Í•±˜¹ÁÉ½™¥±”¹•Ð ‰Ý…å±…¹‘}¥¹ÁÕÑ}ÍÑ…ÑÕÌˆ°€‰Õ¹­¹½Ý¸ˆ¤¥˜¥Í¥¹ÍÑ…¹”¡Í•±˜¹ÁÉ½™¥±”°‘¥Ð¤•±Í”€‰Õ¹­¹½Ý¸ˆ¤ì¹Í•Ñ‘•™…Õ±Ð ‰Ý…å±…¹‘}¥¹ÁÕÑ}É•…Í½¸ˆ°Í•±˜¹ÁÉ½™¥±”¹•Ð ‰Ý…å±…¹‘}¥¹ÁÕÑ}É•…Í½¸ˆ°€ˆˆ¤¥˜¥Í¥¹ÍÑ…¹”¡Í•±˜¹ÁÉ½™¥±”°‘¥Ð¤•±Í”€ˆˆ¤ì‘l‰ÁÉ•™•É}Ý…å±…¹‰t€ô‘l‰‘¥ÍÁ±…å}‰…­•¹‰t€„ô€‰áÝ…å±…¹ˆì‘l‰¹•ÑÝ½É¬‰t€ô€‰¡½ÍÐˆ¥˜Í•±˜¹¹•ÑÝ½É­}½µ‰¼¹•Ñ}Í•±•Ñ• ¤€ôô€Ä•±Í”€‰¹½¹”ˆì‘l‰…Õ‘¥½}‰…­•¹‰t€ô€‰ÁÕ±Í”ˆ¥˜Í•±˜¹…Õ‘¥½}½µ‰¼¹•Ñ}Í•±•Ñ• ¤€ôô€À•±Í”€‰‘¥Í…‰±•ˆì‘l‰…Á…‰¥±¥Ñ¥•Ì‰t€ôí¬èˆ¹•Ñ}…Ñ¥Ù” ¤™½È¬°ˆ¥¸Í•±˜¹…Á}¡•­Ì¹¥Ñ•µÌ ¥ôì‘l‰…Á…‰¥±¥Ñ¥•Ì‰ul‰…Õ‘¥¼‰t€ôÍ•±˜¹…Õ‘¥½}…À¹•Ñ}…Ñ¥Ù” ¤(€€€€€€€É•ÑÕÉ¸((€€€‘•˜…ÁÁ±å}Ý¥¹•}ÁÉ½™¥±•}Í•ÑÑ¥¹Ì¡Í•±˜°}ˆ¤è(€€€€€€€¥˜¹½ÐÍ•±˜¹ÕÉÉ•¹Ñ}ÁÉ½™¥±”è(€€€€€€€€€€€É•ÑÕÉ¸Í•±˜¹±½œ ‰M•±•é¥½¹„Õ¸ÁÉ½™¥±¼¸ˆ¤(€€€€€€€½±‘}…É €ôÍÑÈ¡Í•±˜¹ÁÉ½™¥±”¹•Ð ‰Ý¥¹•}…É ˆ°€‰Ý¥¸ØÐˆ¤¤(€€€€€€€¹•Ý}…É €ôI!MmÍ•±˜¹Á}…É¡}½µ‰¼¹•Ñ}Í•±•Ñ• ¤¥˜Í•±˜¹Á}…É¡}½µ‰¼¹•Ñ}Í•±•Ñ• ¤€ð±•¸¡I!L¤•±Í”€Át(€€€€€€€Í•±˜¹Í…Ù•}ÁÉ½™¥±”¡9½¹”¤(€€€€€€€¥˜½±‘}…É €„ô¹•Ý}…É è(€€€€€€€€€€€Í•±˜¹±½œ ‰É¡¥Ñ•ÑÕÉ„ÁÉ•™¥àµ½‘¥™¥…Ñ„èÁ•ÈÁ…ÍÍ…É”ÑÉ„Ý¥¸ØÐ”Ý¥¸ÌÈÕÍ„I•‰Õ¥±¸1„µ½‘¥™¥„ƒ ÍÑ…Ñ„Í…±Ù…Ñ„µ„¹½¸…ÁÁ±¥…Ñ„…°ÁÉ•™¥à•Í¥ÍÑ•¹Ñ”¸ˆ¤(€€€€€€€€€€€É•ÑÕÉ¸(€€€€€€€¡•±Á•È€ôÍ¡ÕÑ¥°¹Ý¡¥  ‰ÁŒµ…µ”µÍ…¹‘‰½àˆ¤½ÈÍÑÈ¡	M€¼€‰‰¥¸ˆ€¼€‰ÁŒµ…µ”µÍ…¹‘‰½àˆ¤(€€€€€€€Í•±˜¹}ÍÁ…Ý¹}±½•¡m¡•±Á•È°€‰ÁÉ•™¥àµÉ•…Ñ”ˆ°ÍÑÈ¡Í•±˜¹ÕÉÉ•¹Ñ}ÁÉ½™¥±”¥t°€‰Ý¥¹”µÍ•ÑÑ¥¹Ìˆ¤((€€€‘•˜‘¥Í…‰±•}•áÑ•É¹…±}É•¹‘•É•È¡Í•±˜°}ˆõ9½¹”¤è(€€€€€€€Í•±˜¹É•¹‘•É•É}½µ‰¼¹Í•Ñ}Í•±•Ñ• Ä¤(€€€€€€€Í•±˜¹É•¹‘•É•É}Á…Ñ¡}•¹ÑÉä¹Í•Ñ}Ñ•áÐ ˆˆ¤(€€€€€€€Í•±˜¹É•¹‘•É•É}…ÕÑ½}ÍÑ…ÑÕÌ¹Í•Ñ}Ñ•áÐ ‰9•ÍÍÕ¸É•¹‘•É•È•ÍÑ•É¹¼è]¥¹•Íˆ¤(€€€€€€€¥˜Í•±˜¹ÕÉÉ•¹Ñ}ÁÉ½™¥±”è(€€€€€€€€€€€Í•±˜¹Í…Ù•}ÁÉ½™¥±”¡9½¹”¤((€€€‘•˜±•…É}É…Á¡¥Í}…‘‘½¹Ì¡Í•±˜°}ˆõ9½¹”¤è(€€€€€€€Í•±˜¹Ù­Í‘}•¹…‰±”¹Í•Ñ}…Ñ¥Ù”¡…±Í”¤(€€€€€€€Í•±˜¹Ù­Í‘}Á…Ñ¡}•¹ÑÉä¹Í•Ñ}Ñ•áÐ ˆˆ¤(€€€€€€€Í•±˜¹¹Ù…Á¥}•¹…‰±”¹Í•Ñ}…Ñ¥Ù”¡…±Í”¤(€€€€€€€Í•±˜¹¹Ù…Á¥}Á…Ñ¡}•¹ÑÉä¹Í•Ñ}Ñ•áÐ ˆˆ¤(€€€€€€€Í•±˜¹±½œ ‰½µÁ½¹•¹Ñ¤É…™¥¤½Áé¥½¹…±¤‘¥Í…ÑÑ¥Ù…Ñ¤”‘•Í•±•é¥½¹…Ñ¤¸ˆ¤(€€€€€€€¥˜Í•±˜¹ÕÉÉ•¹Ñ}ÁÉ½™¥±”è(€€€€€€€€€€€Í•±˜¹Í…Ù•}ÁÉ½™¥±”¡9½¹”¤((€€€‘•˜}Í…¹‘‰½á}Á½±¥å}¡…¹•¡Í•±˜°€©}…ÉÌ¤è(€€€€€€€Í•±˜¹}É•™É•Í¡}Í…¹‘‰½á}Á½±¥å}¥¹™¼ ¤((€€€‘•˜}É•™É•Í¡}Í…¹‘‰½á}Á½±¥å}¥¹™¼¡Í•±˜¤è(€€€€€€€¥˜¹½Ð¡…Í…ÑÑÈ¡Í•±˜°€‰Í…¹‘‰½á}Á½±¥å}¥¹™¼ˆ¤è(€€€€€€€€€€€É•ÑÕÉ¸(€€€€€€€±¥¹•Ì€ôl‰!=5¡½ÍÐ”‰ÕÌ¡½ÍÐè¹½¸•ÍÁ½ÍÑ¤¸IÕ¹Ñ¥µ””Í¥ÍÑ•µ„èÍ½±„±•ÑÑÕÉ„¸‰t(€€€€€€€¥˜¡…Í…ÑÑÈ¡Í•±˜°€‰…µ•}É½½Ñ}É¼ˆ¤…¹Í•±˜¹…µ•}É½½Ñ}É¼¹•Ñ}…Ñ¥Ù” ¤è(€€€€€€€€€€€±¥¹•Ì¹…ÁÁ•¹ ‰¥É•Ñ½Éä¥½¼èÍ½±„±•ÑÑÕÉ„ìÁÉ•™¥à°!=5Í…¹‘‰½à”Í…±Ù…Ñ…¤É•ÍÑ…¹¼ÍÉ¥Ù¥‰¥±¤¸ˆ¤(€€€€€€€•±Í”è(€€€€€€€€€€€±¥¹•Ì¹…ÁÁ•¹ ‹Šj€¥É•Ñ½Éä¥½¼èÍÉ¥Ù¥‰¥±”Á•È½µÁ…Ñ¥‰¥±¥Ó€±•…ä¸ˆ¤(€€€€€€€¥˜¡…Í…ÑÑÈ¡Í•±˜°€‰¹•ÑÝ½É­}½µ‰¼ˆ¤…¹Í•±˜¹¹•ÑÝ½É­}½µ‰¼¹•Ñ}Í•±•Ñ• ¤€ôô€Äè(€€€€€€€€€€€±¥¹•Ì¹…ÁÁ•¹ ‹Šj€I•Ñ”è¹…µ•ÍÁ…”¡½ÍÐ½¹‘¥Ù¥Í¼ì¥°¥½¼Á×ÈÉ…¥Õ¹•É”%¹Ñ•É¹•Ð”‘¥ÍÁ½Í¥Ñ¥Ù¤18¸ˆ¤(€€€€€€€•±Í”è(€€€€€€€€€€€±¥¹•Ì¹…ÁÁ•¹ ‰I•Ñ”è¹…µ•ÍÁ…”¥Í½±…Ñ¼°¹•ÍÍÕ¸…•ÍÍ¼%¹Ñ•É¹•Ð½18¸ˆ¤(€€€€€€€¥˜¡…Í…ÑÑÈ¡Í•±˜°€‰‘¥ÍÁ±…å}‰…­•¹‘}½µ‰¼ˆ¤è(€€€€€€€€€€€‰…­•¹€ôÍ•±˜¹‘¥ÍÁ±…å}‰…­•¹‘}½µ‰¼¹•Ñ}Í•±•Ñ• ¤(€€€€€€€€€€€ÍÑ…ÑÕÌ€ôÍÑÈ¡Í•±˜¹ÁÉ½™¥±”¹•Ð ‰Ý…å±…¹‘}¥¹ÁÕÑ}ÍÑ…ÑÕÌˆ°€‰Õ¹­¹½Ý¸ˆ¤¤¥˜¥Í¥¹ÍÑ…¹”¡Í•±˜¹ÁÉ½™¥±”°‘¥Ð¤•±Í”€‰Õ¹­¹½Ý¸ˆ(€€€€€€€€€€€áÝ…å±…¹‘}•™™•Ñ¥Ù”€ô‰…­•¹€ôô€È½È€¡‰…­•¹€ôô€À…¹ÍÑ…ÑÕÌ€ôô€‰‰É½­•¸ˆ¤(€€€€€€€€€€€¥˜áÝ…å±…¹‘}•™™•Ñ¥Ù”è(€€€€€€€€€€€€€€€±¥¹•Ì¹…ÁÁ•¹ ‹Šj€a]…å±…¹è%A¡½ÍÐ½¹‘¥Ù¥Í¼Á•È½µÁ…Ñ¥‰¥±¥Ó€5%PµM!Lì±¤…±ÑÉ¤¹…µ•ÍÁ…”É•ÍÑ…¹¼¥Í½±…Ñ¤¸ˆ¤(€€€€€€€€€€€•±¥˜‰…­•¹€ôô€Àè(€€€€€€€€€€€€€€€±¥¹•Ì¹…ÁÁ•¹ ‰¥ÍÁ±…äÕÑ¼è]…å±…¹ÕÍ„%A¥Í½±…Ñ¼ìÕ¸™…±±‰…¬a]…å±…¹Á×È½¹‘¥Ù¥‘•É”%AÍ”¹••ÍÍ…É¥¼¸ˆ¤(€€€€€€€€€€€•±Í”è(€€€€€€€€€€€€€€€±¥¹•Ì¹…ÁÁ•¹ ‰]…å±…¹¹…Ñ¥Ù¼è%A¥Í½±…Ñ¼¸ˆ¤(€€€€€€€Í•±˜¹Í…¹‘‰½á}Á½±¥å}¥¹™¼¹Í•Ñ}Ñ•áÐ ‰q¸ˆ¹©½¥¸¡±¥¹•Ì¤¤((€€€‘•˜Í…Ù•}ÁÉ½™¥±”¡Í•±˜°}ˆ¤è(€€€€€€€¥˜¹½ÐÍ•±˜¹ÕÉÉ•¹Ñ}ÁÉ½™¥±”èÍ•±˜¹±½œ ‰M•±•é¥½¹„Õ¸ÁÉ½™¥±¼¸ˆ¤ìÉ•ÑÕÉ¸(€€€€€€€Í•±˜¹ÁÉ½™¥±”€ôÍ•±˜¹}ÁÉ½™¥±•}‘…Ñ…}™É½µ}Õ¤ ¤ìÍ•±˜¹ÕÉÉ•¹Ñ}ÁÉ½™¥±”¹ÝÉ¥Ñ•}Ñ•áÐ¡©Í½¸¹‘ÕµÁÌ¡Í•±˜¹ÁÉ½™¥±”°¥¹‘•¹ÐôÈ¤°•¹½‘¥¹œô‰ÕÑ˜´àˆ¤ìÍ•±˜¹±½œ¡˜‰AÉ½™¥±¼Í…±Ù…Ñ¼èíÍ•±˜¹ÕÉÉ•¹Ñ}ÁÉ½™¥±”¹¹…µ•ôˆ¤((€€€‘•˜¡…¹•‘}Í…Ù”¡Í•±˜°€©|¤è(€€€€€€€¥˜¹½ÐÍ•±˜¹}±½…‘¥¹œèÁ…ÍÌ((€€€‘•˜‘•±•Ñ•}ÁÉ½™¥±”¡Í•±˜°}ˆ¤è(€€€€€€€¥˜¹½ÐÍ•±˜¹ÕÉÉ•¹Ñ}ÁÉ½™¥±”èÉ•ÑÕÉ¸Í•±˜¹±½œ ‰M•±•é¥½¹„Õ¸ÁÉ½™¥±¼¸ˆ¤(€€€€€€€À€ôÍ•±˜¹ÕÉÉ•¹Ñ}ÁÉ½™¥±”ì‘…Ñ„€ôÍ•±˜¹ÁÉ½™¥±”ìÝ¥¸€ôÑ¬¹]¥¹‘½Ü¡Ñ¥Ñ±”ô‰±¥µ¥¹„ÁÉ½™¥±¼ˆ°ÑÉ…¹Í¥•¹Ñ}™½ÈõÍ•±˜°µ½‘…°õQÉÕ”°‘•™…Õ±Ñ}Ý¥‘Ñ ôÔÈÀ°‘•™…Õ±Ñ}¡•¥¡ÐôÈÈÀ¤ì‰½à€ôÑ¬¹	½à¡½É¥•¹Ñ…Ñ¥½¸õÑ¬¹=É¥•¹Ñ…Ñ¥½¸¹YIQ%0°ÍÁ…¥¹œôÄÈ¤ì‰½à¹Í•Ñ}µ…É¥¹}Ñ½À ÄØ¤ì‰½à¹Í•Ñ}µ…É¥¹}‰½ÑÑ½´ ÄØ¤ì‰½à¹Í•Ñ}µ…É¥¹}ÍÑ…ÉÐ ÄØ¤ì‰½à¹Í•Ñ}µ…É¥¹}•¹ ÄØ¤ìÝ¥¸¹Í•Ñ}¡¥±¡‰½à¤ì‰½à¹…ÁÁ•¹¡Ñ¬¹1…‰•°¡±…‰•°õ˜‰±¥µ¥¹…É”íÀ¹ÍÑ•µôü%°¥½¼½É¥¥¹…±”¹½¸Ù•ÉË Ñ½…Ñ¼¸ˆ°ÝÉ…ÀõQÉÕ”°á…±¥¸ôÀ¤¤ì‘•±‘…Ñ„€ôÑ¬¹¡•­	ÕÑÑ½¸¡±…‰•°ô‰±¥µ¥¹„…¹¡”ÁÉ•™¥à°!=5”Í…±Ù…Ñ…¤ˆ¤ì‰½à¹…ÁÁ•¹¡‘•±‘…Ñ„¤ìÈ€ôÑ¬¹	½à¡ÍÁ…¥¹œôà¤ì‰½à¹…ÁÁ•¹¡È¤ìŒ€ôÑ¬¹	ÕÑÑ½¸¡±…‰•°ô‰¹¹Õ±±„ˆ¤ìŒ¹½¹¹•Ð ‰±¥­•ˆ°±…µ‰‘„}ˆèÝ¥¸¹±½Í” ¤¤ìÈ¹…ÁÁ•¹¡Œ¤ì½¬€ôÑ¬¹	ÕÑÑ½¸¡±…‰•°ô‰±¥µ¥¹„ˆ¤ì½¬¹…‘‘}ÍÍ}±…ÍÌ ‰‘•ÍÑÉÕÑ¥Ù”µ…Ñ¥½¸ˆ¤ìÈ¹…ÁÁ•¹¡½¬¤(€€€€€€€‘•˜‘¼¡|¤è(€€€€€€€€€€€ÑÉäè(€€€€€€€€€€€€€€€¥˜À¹•á¥ÍÑÌ ¤èÀ¹Õ¹±¥¹¬ ¤(€€€€€€€€€€€€€€€¥˜‘•±‘…Ñ„¹•Ñ}…Ñ¥Ù” ¤è(€€€€€€€€€€€€€€€€€€€™½È­•ä¥¸€ ‰ÁÉ•™¥á}É½½Ðˆ°€‰Í…¹‘‰½á}¡½µ”ˆ°€‰Í…Ù•}É½½Ðˆ¤è(€€€€€€€€€€€€€€€€€€€€€€€Ä€ôA…Ñ ¡ÍÑÈ¡‘…Ñ„¹•Ð¡­•ä°€ˆˆ¤¤¤¹•áÁ…¹‘ÕÍ•È ¤(€€€€€€€€€€€€€€€€€€€€€€€¥˜Ä¹¥Í}‘¥È ¤…¹±•¸¡Ä¹Á…ÉÑÌ¤€øô€Ð…¹Ä¹½Ð¥¸€¡A…Ñ ¹¡½µ” ¤°A…Ñ  ˆ¼ˆ¤¤èÍ¡ÕÑ¥°¹ÉµÑÉ•”¡Ä¤(€€€€€€€€€€€€€€€Í•±˜¹ÕÉÉ•¹Ñ}ÁÉ½™¥±”€ô9½¹”ìÍ•±˜¹ÁÉ½™¥±”€ôíôìÝ¥¸¹±½Í” ¤ìÍ•±˜¹±½…‘}ÁÉ½™¥±•Ì ¤ìÍ•±˜¹±½œ¡˜‰AÉ½™¥±¼•±¥µ¥¹…Ñ¼èíÀ¹¹…µ•ôˆ¤(€€€€€€€€€€€•á•ÁÐá•ÁÑ¥½¸…Ì•áŒèÍ•±˜¹±½œ¡˜‰±¥µ¥¹…é¥½¹”™…±±¥Ñ„èí•áôˆ¤(€€€€€€€½¬¹½¹¹•Ð ‰±¥­•ˆ°‘¼¤ìÝ¥¸¹ÁÉ•Í•¹Ð ¤((€€€‘•˜É•‰Õ¥±‘}ÁÉ½™¥±”¡Í•±˜°}ˆ¤è(€€€€€€€¥˜¹½ÐÍ•±˜¹ÕÉÉ•¹Ñ}ÁÉ½™¥±”èÉ•ÑÕÉ¸Í•±˜¹±½œ ‰M•±•é¥½¹„Õ¸ÁÉ½™¥±¼¸ˆ¤(€€€€€€€Í•±˜¹Í…Ù•}ÁÉ½™¥±”¡9½¹”¤ìÍ•±˜¹‰½½ÑÍÑÉ…Á}…¹‘}‘•ÁÌ¡Í•±˜¹ÕÉÉ•¹Ñ}ÁÉ½™¥±”°Í•±˜¹ÁÉ½™¥±”¹•Ð ‰‘•Á•¹‘•¹¥•Ìˆ°mt¤°QÉÕ”¤((€€€‘•˜ÉÕ¹}Í…¹‘‰½à¡Í•±˜°…ÉÌè±¥ÍÑmÍÑÉt°Ñ…œèÍÑÈ°¹•ÑÝ½É¬õ…±Í”¤è(€€€€€€€¥˜¹½ÐÍ•±˜¹ÕÉÉ•¹Ñ}ÁÉ½™¥±”èÉ•ÑÕÉ¸Í•±˜¹±½œ ‰M•±•é¥½¹„Õ¸ÁÉ½™¥±¼¸ˆ¤(€€€€€€€¡•±Á•È€ôÍ¡ÕÑ¥°¹Ý¡¥  ‰ÁŒµ…µ”µÍ…¹‘‰½àˆ¤½ÈÍÑÈ¡	M€¼€‰‰¥¸ˆ€¼€‰ÁŒµ…µ”µÍ…¹‘‰½àˆ¤(€€€€€€€Í•±˜¹}ÍÁ…Ý¹}±½•¡m¡•±Á•È°€©…ÉÌ°ÍÑÈ¡Í•±˜¹ÕÉÉ•¹Ñ}ÁÉ½™¥±”¥t°Ñ…œ¤((€€€‘•˜}ÍÁ…Ý¹}±½•¡Í•±˜°µè±¥ÍÑmÍÑÉt°Ñ…œèÍÑÈ¤è(€€€€€€€Í•±˜¹±½œ¡˜ˆìœ€œ¹©½¥¸¡µ¥ôˆ¤(€€€€€€€‘•˜Ý½É­•È ¤è(€€€€€€€€€€€ÑÉäè(€€€€€€€€€€€€€€€À€ôÍÕ‰ÁÉ½•ÍÌ¹A½Á•¸¡µ°ÍÑ‘½ÕÐõÍÕ‰ÁÉ½•ÍÌ¹A%A°ÍÑ‘•ÉÈõÍÕ‰ÁÉ½•ÍÌ¹MQ=UP°Ñ•áÐõQÉÕ”¤(€€€€€€€€€€€€€€€¥˜À¹ÍÑ‘½ÕÐè(€€€€€€€€€€€€€€€€€€€™½È±¥¹”¥¸À¹ÍÑ‘½ÕÐè1¥ˆ¹¥‘±•}…‘¡Í•±˜¹±½œ°˜‰míÑ…õtí±¥¹”¹ÉÍÑÉ¥À ¥ôˆ¤(€€€€€€€€€€€€€€€½‘”€ôÀ¹Ý…¥Ð ¤ì1¥ˆ¹¥‘±•}…‘¡Í•±˜¹±½œ°˜‰míÑ…õt•á¥Ðõí½‘•ôˆ¤(€€€€€€€€€€€•á•ÁÐá•ÁÑ¥½¸…Ì•áŒè1¥ˆ¹¥‘±•}…‘¡Í•±˜¹±½œ°˜‰míÑ…õtí•áôˆ¤(€€€€€€€Ñ¡É•…‘¥¹œ¹Q¡É•…¡Ñ…É•ÐõÝ½É­•È°‘…•µ½¸õQÉÕ”¤¹ÍÑ…ÉÐ ¤((€€€‘•˜‰½½ÑÍÑÉ…Á}…¹‘}‘•ÁÌ¡Í•±˜°Á…Ñ èA…Ñ °‘•ÁÌè±¥ÍÑmÍÑÉt°‰½½ÑÍÑÉ…Àè‰½½°¤è(€€€€€€€¡•±Á•È€ôÍ¡ÕÑ¥°¹Ý¡¥  ‰ÁŒµ…µ”µÍ…¹‘‰½àˆ¤½ÈÍÑÈ¡	M€¼€‰‰¥¸ˆ€¼€‰ÁŒµ…µ”µÍ…¹‘‰½àˆ¤(€€€€€€€¥˜‰½½ÑÍÑÉ…ÀèÍ•±˜¹}ÍÁ…Ý¹}±½•¡m¡•±Á•È°€‰ÁÉ•™¥àµÉ•…Ñ”ˆ°ÍÑÈ¡Á…Ñ ¥t°€‰ÁÉ•™¥àˆ¤(€€€€€€€¥˜‘•ÁÌèÍ•±˜¹}ÍÁ…Ý¹}±½•¡m¡•±Á•È°€‰‘•ÁÌˆ°ÍÑÈ¡Á…Ñ ¤°€©‘•ÁÍt°€‰‘•ÁÌˆ¤((€€€‘•˜ÉÕ¹}ÁÉ½™¥±•}Ñ½½°¡Í•±˜°Á…å±½…è±¥ÍÑmÍÑÉt°Ñ…œèÍÑÈ¤è(€€€€€€€¡•±Á•È€ôÍ¡ÕÑ¥°¹Ý¡¥  ‰ÁŒµ…µ”µÍ…¹‘‰½àˆ¤½ÈÍÑÈ¡	M€¼€‰‰¥¸ˆ€¼€‰ÁŒµ…µ”µÍ…¹‘‰½àˆ¤ìÍ•±˜¹}ÍÁ…Ý¹}±½•¡m¡•±Á•È°€‰Ý¥¹”ˆ°ÍÑÈ¡Í•±˜¹ÕÉÉ•¹Ñ}ÁÉ½™¥±”¤°€ˆ´´ˆ°€©Á…å±½…‘t°Ñ…œ¤((€€€‘•˜±…Õ¹¡}…µ”¡Í•±˜°}ˆ¤è(€€€€€€€¥˜¹½ÐÍ•±˜¹ÕÉÉ•¹Ñ}ÁÉ½™¥±”èÉ•ÑÕÉ¸(€€€€€€€Í•±˜¹Í…Ù•}ÁÉ½™¥±”¡9½¹”¤ìÍ•±˜¹}ÍÁ…Ý¹}±½•¡l¡Í¡ÕÑ¥°¹Ý¡¥  ‰ÁŒµ…µ”µÍ…¹‘‰½àˆ¤½ÈÍÑÈ¡	M€¼€‰‰¥¸ˆ€¼€‰ÁŒµ…µ”µÍ…¹‘‰½àˆ¤¤°€‰ÉÕ¸ˆ°ÍÑÈ¡Í•±˜¹ÕÉÉ•¹Ñ}ÁÉ½™¥±”¥t°€‰…µ”ˆ¤((€€€‘•˜É•™É•Í¡}ÉÕ¹Ñ¥µ•}±½…°¡Í•±˜°}ˆõ9½¹”¤è(€€€€€€€Í•±˜¹ÉÕ¹¹•É}±½…°€ô‘¥Í½Ù•É}ÉÕ¹¹•ÉÌ ¤ì(€€€€€€€™½È¡¥±¥¸Í•±˜¹}¡¥±‘É•¸¡Í•±˜¹ÉÕ¹Ñ¥µ•}±¥ÍÐ¤èÍ•±˜¹ÉÕ¹Ñ¥µ•}±¥ÍÐ¹É•µ½Ù”¡¡¥±¤(€€€€€€€™½È¥Ñ•´¥¸Í•±˜¹ÉÕ¹¹•É}±½…°è(€€€€€€€€€€€É½Ü€ôÑ¬¹1¥ÍÑ	½áI½Ü ¤ìÉ½Ü¹}ÉÕ¹¹•È€ô¥Ñ•´ìÉ½Ü¹Í•Ñ}¡¥±¡Ñ¬¹1…‰•°¡±…‰•°õ˜‰í¥Ñ•µl¹…µ”uôƒŠPí¥Ñ•µl­¥¹uôƒŠPí¥ÍÕ•µl‰Í½ÕÉ”‰uõq¹í¥Ñ•µl‰Á…Ñ ‰uôˆ°á…±¥¸ôÀ°ÝÉ…ÀõQÉÕ”¤¤ìÍ•±˜¹ÉÕ¹Ñ¥µ•}±¥ÍÐ¹…ÁÁ•¹¡É½Ü¤(€€€€€€€±…‰•±Ì€ôl‰]¥¹”‘¤Í¥ÍÑ•µ„‰t€¬m˜‰íál¹…µ”uôƒŠPíálÍ½ÕÉ”uôˆ™½Èà¥¸Í•±˜¹ÉÕ¹¹•É}±½…°¥˜à¹•Ð ¥¹œ¤€„ô€Ý¥¹”µÍåÍÑ•´t(€€€€€€€Í•±˜¹ÉÕ¹Ñ¥µ•}¡½¥”¹Í•Ñ}µ½‘•°¡Ñ¬¹MÑÉ¥¹1¥ÍÐ¹¹•Ü¡±…‰•±Ì¤¤ìÍ•±˜¹ÉÕ¹Ñ¥µ•}¡½¥”¹Í•Ñ}Í•±•Ñ• À¤(€€€€€€€Í•±˜¹ÉÕ¹Ñ¥µ•}ÍÑ…ÑÕÌ¹Í•Ñ}Ñ•áÐ¡˜‰IÕ¹Ñ¥µ”±½…±¤É¥±•Ù…Ñ¤èí±•¸¡Í•±˜¹ÉÕ¹¹•É}±½…°¥ôˆ¤(€€€€€€€Í•±˜¹}É•ÍÑ½É•}ÉÕ¹Ñ¥µ•}¡½¥” ¤((€€€‘•˜}¡¥±‘É•¸¡Í•±˜°Ý¥‘•Ð¤è(€€€€€€€½ÕÐõmtìŒõÝ¥‘•Ð¹•Ñ}™¥ÉÍÑ}¡¥± ¤(€€€€€€€Ý¡¥±”Œè½ÕÐ¹…ÁÁ•¹¡Œ¤ìŒõŒ¹•Ñ}¹•áÑ}Í¥‰±¥¹œ ¤(€€€€€€€É•ÑÕÉ¸½ÕÐ((€€€‘•˜}É•ÍÑ½É•}ÉÕ¹Ñ¥µ•}¡½¥”¡Í•±˜¤è(€€€€€€€Ñ…É•Ð€ôÍ•±˜¹ÁÉ½™¥±”¹•Ð Í•±•Ñ•‘}ÉÕ¹¹•Èœ¤¥˜¥Í¥¹ÍÑ…¹”¡Í•±˜¹ÁÉ½™¥±”°‘¥Ð¤•±Í”9½¹”(€€€€€€€¥˜¹½Ð¥Í¥¹ÍÑ…¹”¡Ñ…É•Ð°‘¥Ð¤èÍ•±˜¹ÉÕ¹Ñ¥µ•}¡½¥”¹Í•Ñ}Í•±•Ñ• À¤ìÉ•ÑÕÉ¸(€€€€€€€™½È¤°¥Ñ•´¥¸•¹Õµ•É…Ñ”¡mà™½Èà¥¸Í•±˜¹ÉÕ¹¹•É}±½…°¥˜à¹•Ð ­¥¹œ¤€„ô€Ý¥¹”µÍåÍÑ•´t°ÍÑ…ÉÐôÄ¤è(€€€€€€€€€€€¥˜¥Ñ•´¹•Ð Á…Ñ œ¤€ôôÑ…É•Ð¹•Ð Á…Ñ œ¤è(€€€€€€€€€€€€€€€Í•±˜¹ÉÕ¹Ñ¥µ•}¡½¥”¹Í•Ñ}Í•±•Ñ•¡¤¤ìÉ•ÑÕÉ¸(€€€€€€€Í•±˜¹ÉÕ¹Ñ¥µ•}¡½¥”¹Í•Ñ}Í•±•Ñ• À¤((€€€‘•˜ÉÕ¹Ñ¥µ•}¡½¥•}¡…¹•¡Í•±˜°€©|¤è(€€€€€€€¥˜Í•±˜¹}±½…‘¥¹œ½È¹½ÐÍ•±˜¹ÕÉÉ•¹Ñ}ÁÉ½™¥±”èÉ•ÑÕÉ¸(€€€€€€€¥‘à€ôÍ•±˜¹ÉÕ¹Ñ¥µ•}¡½¥”¹•Ñ}Í•±•Ñ• ¤(€€€€€€€…¹‘¥‘…Ñ•Ì€ômà™½Èà¥¸Í•±˜¹ÉÕ¹¹•É}±½…°¥˜à¹•Ð ­¥¹œ¤€„ô€Ý¥¹”µÍåÍÑ•´t(€€€€€€€Í•±˜¹ÁÉ½™¥±•lÍ•±•Ñ•‘}ÉÕ¹¹•Èt€ô9½¹”¥˜¥‘à€ôô€À½È¥‘à´Ä€øô±•¸¡…¹‘¥‘…Ñ•Ì¤•±Í”…¹‘¥‘…Ñ•Ím¥‘à´Åt(€€€€€€€Í•±˜¹Í…Ù•}ÁÉ½™¥±”¡9½¹”¤((€€€‘•˜É•™É•Í¡}…Ñ…±½œ¡Í•±˜°}ˆõ9½¹”¤è(€€€€€€€Í•±˜¹…Ñ…±½}ÍÑ…ÑÕÌ¹Í•Ñ}Ñ•áÐ ‰¥½É¹…µ•¹Ñ¼…Ñ…±½¼É•µ½Ñ¿Š˜ˆ¤(€€€€€€€‘•˜Ý½É­•È ¤è(€€€€€€€€€€€¥Ñ•µÌ°•ÉÉ½ÉÌ€ô…Ñ…±½}…±° ¤ì1¥ˆ¹¥‘±•}…‘¡Í•±˜¹Í¡½Ý}…Ñ…±½œ°¥Ñ•µÌ°•ÉÉ½ÉÌ¤(€€€€€€€Ñ¡É•…‘¥¹œ¹Q¡É•…¡Ñ…É•ÐõÝ½É­•È°‘…•µ½¸õQÉÕ”¤¹ÍÑ…ÉÐ ¤((€€€‘•˜Í¡½Ý}…Ñ…±½œ¡Í•±˜°¥Ñ•µÌ°•ÉÉ½ÉÌ¤è(€€€€€€€Í•±˜¹ÉÕ¹¹•É}…Ñ…±½œ€ô¥Ñ•µÌ(€€€€€€€™½È¡¥±¥¸±¥ÍÐ¡Í•±˜¹…Ñ…±½}±¥ÍÐ¤èÍ•±˜¹…Ñ…±½}±¥ÍÐ¹É•µ½Ù”¡¡¥±¤(€€€€€€€™½È¥Ñ•´¥¸¥Ñ•µÌè(€€€€€€€€€€€É½Ü€ôÑ¬¹1¥ÍÑ	½áI½Ü ¤ìÉ½Ü¹}ÉÕ¹¹•È€ô¥Ñ•´ìÉ½Ü¹Í•Ñ}¡¥±¡Ñ¬¹1…‰•°¡±…‰•°õ˜‰í¥Ñ•´¹•Ð ¹…µ”œ¥ôƒ
+Üí¥Ñ•´¹•Ð ™…µ¥±äœ°¥Ñ•´¹•Ð ­¥¹œ°œœ¤¥ôƒ
+Üí¥Ñ•´¹•Ð Í½ÕÉ”œ°œœ¥õq¹í¥Ñ•´¹•Ð ™¥±•¹…µ”œ°€µ…¹¥™•ÍÐÉ•µ½Ñ¼œ¥ôˆ°á…±¥¸ôÀ°ÝÉ…ÀõQÉÕ”¤¤ìÍ•±˜¹…Ñ…±½}±¥ÍÐ¹…ÁÁ•¹¡É½Ü¤(€€€€€€€Í•±˜¹…Ñ…±½}ÍÑ…ÑÕÌ¹Í•Ñ}Ñ•áÐ¡˜‰…Ñ…±½¼É•µ½Ñ¼èí±•¸¡¥Ñ•µÌ¥ôÉÕ¹Ñ¥µ”‘¥ÍÁ½¹¥‰¥±¤ˆ€¬€¡˜ˆƒŠPí±•¸¡•ÉÉ½ÉÌ¥ôÁÉ½Ù¥‘•È¹½¸É…¥Õ¹¥‰¥±¤ˆ¥˜•ÉÉ½ÉÌ•±Í”€ˆˆ¤¤ìÍ•±˜¹±½œ ‰…Ñ…±½¼ÉÕ¹Ñ¥µ”…¥½É¹…Ñ¼¸ˆ¤ìÉ•ÑÕÉ¸…±Í”((€€€‘•˜¥¹ÍÑ…±±}Í•±•Ñ•‘}ÉÕ¹Ñ¥µ”¡Í•±˜°}ˆ¤è(€€€€€€€É½Ü€ôÍ•±˜¹…Ñ…±½}±¥ÍÐ¹•Ñ}Í•±•Ñ•‘}É½Ü ¤(€€€€€€€¥˜¹½ÐÉ½ÜèÉ•ÑÕÉ¸Í•±˜¹±½œ ‰M•±•é¥½¹„Õ¸ÉÕ¹Ñ¥µ”‘…°…Ñ…±½¼¸ˆ¤(€€€€€€€¥Ñ•´€ôÉ½Ü¹}ÉÕ¹¹•Èì‰…Í”€ôA…Ñ ¹¡½µ” ¤€¼€ˆ¹±½…°½Í¡…É”½ÁŒµ…µ”µµ…¹…•È½ÉÕ¹¹•ÉÌˆ(€€€€€€€‘•˜Ý½É­•È ¤è(€€€€€€€€€€€ÑÉäè(€€€€€€€€€€€€€€€À€ô‘½Ý¹±½…‘}…¹‘}¥¹ÍÑ…±°¡¥Ñ•´°‰…Í”¤ì1¥ˆ¹¥‘±•}…‘¡Í•±˜¹±½œ°˜‰IÕ¹Ñ¥µ”¥¹ÍÑ…±±…Ñ¼èíÁôˆ¤ì1¥ˆ¹¥‘±•}…‘¡Í•±˜¹É•™É•Í¡}ÉÕ¹Ñ¥µ•}±½…°¤(€€€€€€€€€€€•á•ÁÐá•ÁÑ¥½¸…Ì•áŒè1¥ˆ¹¥‘±•}…‘¡Í•±˜¹±½œ°˜‰%¹ÍÑ…±±…é¥½¹”ÉÕ¹Ñ¥µ”™…±±¥Ñ„èí•áôˆ¤(€€€€€€€Ñ¡É•…‘¥¹œ¹Q¡É•…¡Ñ…É•ÐõÝ½É­•È°‘…•µ½¸õQÉÕ”¤¹ÍÑ…ÉÐ ¤((€€€‘•˜É•µ½Ù•}Í•±•Ñ•‘}ÉÕ¹Ñ¥µ”¡Í•±˜°}ˆ¤è(€€€€€€€É½Ü€ôÍ•±˜¹ÉÕ¹Ñ¥µ•}±¥ÍÐ¹•Ñ}Í•±•Ñ•‘}É½Ü ¤(€€€€€€€¥˜¹½ÐÉ½ÜèÉ•ÑÕÉ¸Í•±˜¹±½œ ‰M•±•é¥½¹„Õ¸ÉÕ¹Ñ¥µ”±½…±”¸ˆ¤(€€€€€€€¥Ñ•´€ôÉ½Ü¹}ÉÕ¹¹•È(€€€€€€€¥˜¥Ñ•´¹•Ð ‰­¥¹ˆ¤€ôô€‰Ý¥¹”µÍåÍÑ•´ˆ½È¥Ñ•´¹•Ð ‰Í½ÕÉ”ˆ¤€ôô€‰M¥ÍÑ•µ„ˆèÉ•ÑÕÉ¸Í•±˜¹±½œ ‰%°ÉÕ¹Ñ¥µ”‘¤Í¥ÍÑ•µ„¹½¸Á×È•ÍÍ•É”‘¥Í¥¹ÍÑ…±±…Ñ¼‘„ÅÕ¤¸ˆ¤(€€€€€€€À€ôA…Ñ ¡¥Ñ•µl‰Á…Ñ ‰t¤(€€€€€€€ÑÉäèÍ¡ÕÑ¥°¹ÉµÑÉ•”¡À¤ìÍ•±˜¹±½œ¡˜‰IÕ¹Ñ¥µ”É¥µ½ÍÍ¼èíÁôˆ¤ìÍ•±˜¹É•™É•Í¡}ÉÕ¹Ñ¥µ•}±½…° ¤(€€€€€€€•á•ÁÐá•ÁÑ¥½¸…Ì•áŒèÍ•±˜¹±½œ¡˜‰I¥µ½é¥½¹”ÉÕ¹Ñ¥µ”™…±±¥Ñ„èí•áôˆ¤((€€€‘•˜É•™É•Í¡}É•¹‘•É•É}±½…°¡Í•±˜°}ˆõ9½¹”¤è(€€€€€€€Í•±˜¹É•¹‘•É•É}±½…°€ô‘¥Í½Ù•É}É•¹‘•É•ÉÌ ¤(€€€€€€€™½È¡¥±¥¸Í•±˜¹}¡¥±‘É•¸¡Í•±˜¹É•¹‘•É•É}±½…±}±¥ÍÐ¤èÍ•±˜¹É•¹‘•É•É}±½…±}±¥ÍÐ¹É•µ½Ù”¡¡¥±¤(€€€€€€€™½È¥Ñ•´¥¸Í•±˜¹É•¹‘•É•É}±½…°è(€€€€€€€€€€€É½Ü€ôÑ¬¹1¥ÍÑ	½áI½Ü ¤ìÉ½Ü¹}É•¹‘•É•È€ô¥Ñ•´(€€€€€€€€€€€É½Ü¹Í•Ñ}¡¥±¡Ñ¬¹1…‰•°¡±…‰•°õ˜‰í¥Ñ•µl­¥¹t¹ÕÁÁ•È ¥ôí¥Ñ•µlÙ•ÉÍ¥½¸uõq¹í¥Ñ•µlÁ…Ñ uôˆ°á…±¥¸ôÀ°ÝÉ…ÀõQÉÕ”¤¤(€€€€€€€€€€€Í•±˜¹É•¹‘•É•É}±½…±}±¥ÍÐ¹…ÁÁ•¹¡É½Ü¤(€€€€€€€Í•±˜¹É•¹‘•É•É}±½…±}ÍÑ…ÑÕÌ¹Í•Ñ}Ñ•áÐ¡˜‰I•¹‘•É•È¥¹ÍÑ…±±…Ñ¤‘„A…µ”5…¹…•Èèí±•¸¡Í•±˜¹É•¹‘•É•É}±½…°¥ôˆ¤(€€€€€€€É•ÑÕÉ¸…±Í”((€€€‘•˜É•™É•Í¡}É•¹‘•É•É}…Ñ…±½œ¡Í•±˜°}ˆõ9½¹”¤è(€€€€€€€Í•±˜¹É•¹‘•É•É}…Ñ…±½}ÍÑ…ÑÕÌ¹Í•Ñ}Ñ•áÐ ‰¥½É¹…µ•¹Ñ¼…Ñ…±½¼É…™¥¿Š˜ˆ¤(€€€€€€€‘•˜Ý½É­•È ¤è(€€€€€€€€€€€¥Ñ•µÌ°•ÉÉ½ÉÌ€ôÉ•¹‘•É•É}…Ñ…±½}…±° ¤ì1¥ˆ¹¥‘±•}…‘¡Í•±˜¹Í¡½Ý}É•¹‘•É•É}…Ñ…±½œ°¥Ñ•µÌ°•ÉÉ½ÉÌ¤(€€€€€€€Ñ¡É•…‘¥¹œ¹Q¡É•…¡Ñ…É•ÐõÝ½É­•È°‘…•µ½¸õQÉÕ”¤¹ÍÑ…ÉÐ ¤((€€€‘•˜Í¡½Ý}É•¹‘•É•É}…Ñ…±½œ¡Í•±˜°¥Ñ•µÌ°•ÉÉ½ÉÌ¤è(€€€€€€€Í•±˜¹É•¹‘•É•É}…Ñ…±½œ€ô¥Ñ•µÌ(€€€€€€€™½È¡¥±¥¸Í•±˜¹}¡¥±‘É•¸¡Í•±˜¹É•¹‘•É•É}…Ñ…±½}±¥ÍÐ¤èÍ•±˜¹É•¹‘•É•É}…Ñ…±½}±¥ÍÐ¹É•µ½Ù”¡¡¥±¤(€€€€€€€™½È¥Ñ•´¥¸¥Ñ•µÌè(€€€€€€€€€€€É½Ü€ôÑ¬¹1¥ÍÑ	½áI½Ü ¤ìÉ½Ü¹}É•¹‘•É•È€ô¥Ñ•´(€€€€€€€€€€€É½Ü¹Í•Ñ}¡¥±¡Ñ¬¹1…‰•°¡±…‰•°õ˜‰í¥Ñ•´¹•Ð ­¥¹œ°œœ¤¹ÕÁÁ•È ¥ôƒ
+Üí¥Ñ•´¹•Ð Ù•ÉÍ¥½¸œ°œœ¥ôƒ
+ß
+Üí¥Ñ•´¹•Ð Í½ÕÉ”œ°œœ¥õq¹í¥Ñ•´¹•Ð ™¥±•¹…µ”œ°œœ¥ôˆ°á…±¥¸ôÀ°ÝÉ…ÀõQÉÕ”¤¤(€€€€€€€€€€€Í•±˜¹É•¹‘•É•É}…Ñ…±½}±¥ÍÐ¹…ÁÁ•¹¡É½Ü¤(€€€€€€€ÍÕ™™¥à€ô˜ˆƒŠPí±•¸¡•ÉÉ½ÉÌ¥ô™½¹Ñ”½¤¹½¸É…¥Õ¹¥‰¥±¤ˆ¥˜•ÉÉ½ÉÌ•±Í”€ˆˆ(€€€€€€€Í•±˜¹É•¹‘•É•É}…Ñ…±½}ÍÑ…ÑÕÌ¹Í•Ñ}Ñ•áÐ¡˜‰…Ñ…±½¼É•¹‘•É•Èèí±•¸¡¥Ñ•µÌ¥ôÉ•±•…Í”‘¥ÍÁ½¹¥‰¥±¥íÍÕ™™¥áôˆ¤(€€€€€€€™½È•ÉÈ¥¸•ÉÉ½ÉÌèÍ•±˜¹±½œ¡˜‰…Ñ…±½¼É•¹‘•É•Èèí•ÉÉôˆ¤(€€€€€€€É•ÑÕÉ¸…±Í”((€€€‘•˜¥¹ÍÑ…±±}Í•±•Ñ•‘}É•¹‘•É•È¡Í•±˜°}ˆ¤è(€€€€€€€É½Ü€ôÍ•±˜¹É•¹‘•É•É}…Ñ…±½}±¥ÍÐ¹•Ñ}Í•±•Ñ•‘}É½Ü ¤(€€€€€€€¥˜¹½ÐÉ½ÜèÉ•ÑÕÉ¸Í•±˜¹±½œ ‰M•±•é¥½¹„Õ¸½µÁ½¹•¹Ñ”É…™¥¼‘…°…Ñ…±½¼¸ˆ¤(€€€€€€€¥Ñ•´€ôÉ½Ü¹}É•¹‘•É•È(€€€€€€€Í•±˜¹±½œ¡˜‰%¹ÍÑ…±±…é¥½¹”í¥Ñ•´¹•Ð ­¥¹œ°œœ¤¹ÕÁÁ•È ¥ôí¥Ñ•´¹•Ð Ù•ÉÍ¥½¸œ°œœ¥÷Š˜ˆ¤(€€€€€€€‘•˜Ý½É­•È ¤è(€€€€€€€€€€€ÑÉäè(€€€€€€€€€€€€€€€Á…Ñ €ô¥¹ÍÑ…±±}É•¹‘•É•È¡¥Ñ•´¤(€€€€€€€€€€€€€€€1¥ˆ¹¥‘±•}…‘¡Í•±˜¹±½œ°˜‰I•¹‘•É•È¥¹ÍÑ…±±…Ñ¼èíÁ…Ñ¡ôˆ¤(€€€€€€€€€€€€€€€1¥ˆ¹¥‘±•}…‘¡Í•±˜¹É•™É•Í¡}É•¹‘•É•É}±½…°¤(€€€€€€€€€€€•á•ÁÐá•ÁÑ¥½¸…Ì•áŒè(€€€€€€€€€€€€€€€1¥ˆ¹¥‘±•}…‘¡Í•±˜¹±½œ°˜‰%¹ÍÑ…±±…é¥½¹”É•¹‘•É•È™…±±¥Ñ„èí•áôˆ¤(€€€€€€€Ñ¡É•…‘¥¹œ¹Q¡É•…¡Ñ…É•ÐõÝ½É­•È°‘…•µ½¸õQÉÕ”¤¹ÍÑ…ÉÐ ¤((€€€‘•˜ÕÍ•}Í•±•Ñ•‘}É•¹‘•É•È¡Í•±˜°}ˆ¤è(€€€€€€€É½Ü€ôÍ•±˜¹É•¹‘•É•É}±½…±}±¥ÍÐ¹•Ñ}Í•±•Ñ•‘}É½Ü ¤(€€€€€€€¥˜¹½ÐÉ½ÜèÉ•ÑÕÉ¸Í•±˜¹±½œ ‰M•±•é¥½¹„Õ¸É•¹‘•É•È±½…±”¸ˆ¤(€€€€€€€¥Ñ•´€ôÉ½Ü¹}É•¹‘•É•È(€€€€€€€­¥¹€ô¥Ñ•´¹•Ð ‰­¥¹ˆ¤(€€€€€€€¥˜­¥¹€ôô€‰Ù­Íˆè(€€€€€€€€€€€Í•±˜¹Ù­Í‘}•¹…‰±”¹Í•Ñ}…Ñ¥Ù”¡QÉÕ”¤ìÍ•±˜¹Ù­Í‘}Á…Ñ¡}•¹ÑÉä¹Í•Ñ}Ñ•áÐ¡¥Ñ•µl‰Á…Ñ ‰t¤(€€€€€€€•±¥˜­¥¹€ôô€‰‘áÙ¬µ¹Ù…Á¤ˆè(€€€€€€€€€€€Í•±˜¹¹Ù…Á¥}•¹…‰±”¹Í•Ñ}…Ñ¥Ù”¡QÉÕ”¤ìÍ•±˜¹¹Ù…Á¥}Á…Ñ¡}•¹ÑÉä¹Í•Ñ}Ñ•áÐ¡¥Ñ•µl‰Á…Ñ ‰t¤(€€€€€€€•±Í”è(€€€€€€€€€€€¥‘à€ôì‰‘áÙ¬ˆè€È°€‰ÝÙ¬ˆè€Ì°€‰‘Ù½½‘½¼ˆè€Ñô¹•Ð¡­¥¹°€Ä¤(€€€€€€€€€€€Í•±˜¹É•¹‘•É•É}½µ‰¼¹Í•Ñ}Í•±•Ñ•¡¥‘à¤ìÍ•±˜¹É•¹‘•É•É}Á…Ñ¡}•¹ÑÉä¹Í•Ñ}Ñ•áÐ¡¥Ñ•µl‰Á…Ñ ‰t¤(€€€€€€€€€€€Í•±˜¹É•¹‘•É•É}…ÕÑ½}ÍÑ…ÑÕÌ¹Í•Ñ}Ñ•áÐ¡˜‰í­¥¹¹ÕÁÁ•È ¥ôÍ•±•é¥½¹…Ñ¼èí¥Ñ•µlÙ•ÉÍ¥½¸uôˆ¤(€€€€€€€Í•±˜¹±½œ¡˜‰½µÁ½¹•¹Ñ”É…™¥¼Í•±•é¥½¹…Ñ¼èí­¥¹¹ÕÁÁ•È ¥ôí¥Ñ•µlÙ•ÉÍ¥½¸uôˆ¤(€€€€€€€¥˜Í•±˜¹ÕÉÉ•¹Ñ}ÁÉ½™¥±”èÍ•±˜¹Í…Ù•}ÁÉ½™¥±”¡9½¹”¤((€€€‘•˜É•µ½Ù•}Í•±•Ñ•‘}É•¹‘•É•È¡Í•±˜°}ˆ¤è(€€€€€€€É½Ü€ôÍ•±˜¹É•¹‘•É•É}±½…±}±¥ÍÐ¹•Ñ}Í•±•Ñ•‘}É½Ü ¤(€€€€€€€¥˜¹½ÐÉ½ÜèÉ•ÑÕÉ¸Í•±˜¹±½œ ‰M•±•é¥½¹„Õ¸É•¹‘•É•È±½…±”¸ˆ¤(€€€€€€€¥Ñ•´€ôÉ½Ü¹}É•¹‘•É•È(€€€€€€€ÑÉäè(€€€€€€€€€€€É•µ½Ù•}É•¹‘•É•È¡¥Ñ•µl‰Á…Ñ ‰t¤(€€€€€€€€€€€Í•±˜¹±½œ¡˜‰I•¹‘•É•ÈÉ¥µ½ÍÍ¼èí¥Ñ•µlÁ…Ñ uôˆ¤(€€€€€€€€€€€¥˜Í•±˜¹É•¹‘•É•É}Á…Ñ¡}•¹ÑÉä¹•Ñ}Ñ•áÐ ¤¹ÍÑÉ¥À ¤€ôô¥Ñ•µl‰Á…Ñ ‰tè(€€€€€€€€€€€€€€€Í•±˜¹É•¹‘•É•É}Á…Ñ¡}•¹ÑÉä¹Í•Ñ}Ñ•áÐ ˆˆ¤(€€€€€€€€€€€Í•±˜¹É•™É•Í¡}É•¹‘•É•É}±½…° ¤(€€€€€€€€€€€Í•±˜¹}É•¹‘•É•É}¡…¹• ¤(€€€€€€€•á•ÁÐá•ÁÑ¥½¸…Ì•áŒè(€€€€€€€€€€€Í•±˜¹±½œ¡˜‰I¥µ½é¥½¹”É•¹‘•É•È™…±±¥Ñ„èí•áôˆ¤((€€€‘•˜¥¹ÍÑ…±±}É•ÑÉ½}½‘•Œ¡Í•±˜°}ˆ¤è(€€€€€€€¥˜¹½ÐÍ•±˜¹ÕÉÉ•¹Ñ}ÁÉ½™¥±”èÉ•ÑÕÉ¸Í•±˜¹±½œ ‰M•±•é¥½¹„Õ¸ÁÉ½™¥±¼¸ˆ¤(€€€€€€€Ù•É‰Ì€ôl‰…±±½‘•Ìˆ°€‰¥½‘•Ìˆ°€‰¥¹•Á…¬ˆ°€‰°Í½‘•àˆ°€‰™™‘Í¡½Üˆ°€‰áÙ¥ˆ°€‰±…Ù™¥±Ñ•ÉÌˆ°€‰ÅÕ…ÉÑèˆ°€‰…µÍÑÉ•…´ˆ°€‰…Ù¥™¥°ÌÈˆ°€‰‰¥¹­ÜÌÈ‰t(€€€€€€€¥‘à€ôÍ•±˜¹É•ÑÉ½}½‘•}½µ‰¼¹•Ñ}Í•±•Ñ• ¤(€€€€€€€¥˜¥‘à€øô±•¸¡Ù•É‰Ì¤è¥‘à€ô€À(€€€€€€€Ù•Éˆ€ôÙ•É‰Ím¥‘át(€€€€€€€¡•±Á•È€ôÍ¡ÕÑ¥°¹Ý¡¥  ‰ÁŒµ…µ”µÍ…¹‘‰½àˆ¤½ÈÍÑÈ¡	M€¼€‰‰¥¸ˆ€¼€‰ÁŒµ…µ”µÍ…¹‘‰½àˆ¤(€€€€€€€Í•±˜¹±½œ¡˜‰%¹ÍÑ…±±…é¥½¹”½‘•ŒÉ•ÑÉ¼èíÙ•É‰ôˆ¤(€€€€€€€Í•±˜¹}ÍÁ…Ý¹}±½•¡m¡•±Á•È°€‰‘•ÁÌˆ°ÍÑÈ¡Í•±˜¹ÕÉÉ•¹Ñ}ÁÉ½™¥±”¤°Ù•É‰t°˜‰½‘•ŒéíÙ•É‰ôˆ¤((€€€‘•˜¥¹ÍÑ…±±}‘•Á•¹‘•¹¥•Ì¡Í•±˜°}ˆ¤è(€€€€€€€¥˜¹½ÐÍ•±˜¹ÕÉÉ•¹Ñ}ÁÉ½™¥±”èÉ•ÑÕÉ¸Í•±˜¹±½œ ‰M•±•é¥½¹„Õ¸ÁÉ½™¥±¼¸ˆ¤(€€€€€€€‘•ÁÌ€ôm•Ñ…ÑÑÈ¡É½Ü¹•Ñ}¡¥± ¤°€‰}‘•Á}­•äˆ°9½¹”¤™½ÈÉ½Ü¥¸Í•±˜¹‘•Á}±¥ÍÐ¥˜…±Í•t(€€€€€€€‘•ÁÌ€ômt(€€€€€€€É½Ü€ôÍ•±˜¹‘•Á}±¥ÍÐ¹•Ñ}™¥ÉÍÑ}¡¥± ¤(€€€€€€€Ý¡¥±”É½Üè(€€€€€€€€€€€ˆ€ôÉ½Ü¹•Ñ}¡¥± ¤(€€€€€€€€€€€¥˜¥Í¥¹ÍÑ…¹”¡ˆ°Ñ¬¹¡•­	ÕÑÑ½¸¤…¹ˆ¹•Ñ}…Ñ¥Ù” ¤è‘•ÁÌ¹…ÁÁ•¹¡•Ñ…ÑÑÈ¡ˆ°€‰}‘•Á}­•äˆ°€ˆˆ¤¤(€€€€€€€€€€€É½Ü€ôÉ½Ü¹•Ñ}¹•áÑ}Í¥‰±¥¹œ ¤(€€€€€€€ÕÍÑ½´€ôÍ•±˜¹‘•Á}¥¹ÁÕÐ¹•Ñ}Ñ•áÐ ¤¹ÍÑÉ¥À ¤(€€€€€€€¥˜ÕÍÑ½´è‘•ÁÌ¹•áÑ•¹¡ÕÍÑ½´¹ÍÁ±¥Ð ¤¤(€€€€€€€‘•ÁÌ€ômà™½Èà¥¸‘•ÁÌ¥˜át(€€€€€€€¥˜¹½Ð‘•ÁÌèÉ•ÑÕÉ¸Í•±˜¹±½œ ‰9•ÍÍÕ¹„‘¥Á•¹‘•¹é„Í•±•é¥½¹…Ñ„¸ˆ¤(€€€€€€€Í•±˜¹}ÍÁ…Ý¹}±½•¡l¡Í¡ÕÑ¥°¹Ý¡¥  ‰ÁŒµ…µ”µÍ…¹‘‰½àˆ¤½ÈÍÑÈ¡	M€¼€‰‰¥¸ˆ€¼€‰ÁŒµ…µ”µÍ…¹‘‰½àˆ¤¤°€‰‘•ÁÌˆ°ÍÑÈ¡Í•±˜¹ÕÉÉ•¹Ñ}ÁÉ½™¥±”¤°€©‘•ÁÍt°€‰‘•ÁÌˆ¤((€€€‘•˜É•‰Õ¥±‘}…¹‘}‘•ÁÌ¡Í•±˜°}ˆ¤è(€€€€€€€¥˜¹½ÐÍ•±˜¹ÕÉÉ•¹Ñ}ÁÉ½™¥±”èÉ•ÑÕÉ¸(€€€€€€€Í•±˜¹Í…Ù•}ÁÉ½™¥±”¡9½¹”¤(€€€€€€€¡•±Á•È€ôÍ¡ÕÑ¥°¹Ý¡¥  ‰ÁŒµ…µ”µÍ…¹‘‰½àˆ¤½ÈÍÑÈ¡	M€¼€‰‰¥¸ˆ€¼€‰ÁŒµ…µ”µÍ…¹‘‰½àˆ¤(€€€€€€€‘•ÁÌ€ô±¥ÍÐ¡Í•±˜¹ÁÉ½™¥±”¹•Ð ‰‘•Á•¹‘•¹¥•Ìˆ°mt¤¤(€€€€€€€‘•˜Ý½É­•È ¤è(€€€€€€€€€€€ÑÉäè(€€€€€€€€€€€€€€€™½Èµ°Ñ…œ¥¸€ ¡m¡•±Á•È°€‰ÁÉ•™¥àµÉ•…Ñ”ˆ°ÍÑÈ¡Í•±˜¹ÕÉÉ•¹Ñ}ÁÉ½™¥±”¤°€ˆ´µÉ•‰Õ¥±‰t°€‰ÁÉ•™¥àˆ¤°¤è(€€€€€€€€€€€€€€€€€€€Í•±˜¹±½œ¡˜ˆìœ€œ¹©½¥¸¡µ¥ôˆ¤(€€€€€€€€€€€€€€€€€€€À€ôÍÕ‰ÁÉ½•ÍÌ¹A½Á•¸¡µ°ÍÑ‘½ÕÐõÍÕ‰ÁÉ½•ÍÌ¹A%A°ÍÑ‘•ÉÈõÍÕ‰ÁÉ½•ÍÌ¹MQ=UP°Ñ•áÐõQÉÕ”¤(€€€€€€€€€€€€€€€€€€€¥˜À¹ÍÑ‘½ÕÐè(€€€€€€€€€€€€€€€€€€€€€€€™½È±¥¹”¥¸À¹ÍÑ‘½ÕÐè1¥ˆ¹¥‘±•}…‘¡Í•±˜¹±½œ°˜‰míÑ…õtí±¥¹”¹ÉÍÑÉ¥À ¥ôˆ¤(€€€€€€€€€€€€€€€€€€€½‘”€ôÀ¹Ý…¥Ð ¤(€€€€€€€€€€€€€€€€€€€¥˜½‘”€„ô€Àè(€€€€€€€€€€€€€€€€€€€€€€€1¥ˆ¹¥‘±•}…‘¡Í•±˜¹±½œ°˜‰mÁÉ•™¥át•á¥Ðõí½‘•ôì‘¥Á•¹‘•¹é”¹½¸¥¹ÍÑ…±±…Ñ”ˆ¤(€€€€€€€€€€€€€€€€€€€€€€€É•ÑÕÉ¸(€€€€€€€€€€€€€€€¥˜‘•ÁÌè(€€€€€€€€€€€€€€€€€€€µ€ôm¡•±Á•È°€‰‘•ÁÌˆ°ÍÑÈ¡Í•±˜¹ÕÉÉ•¹Ñ}ÁÉ½™¥±”¤°€©‘•ÁÍtìÍ•±˜¹±½œ¡˜ˆìœ€œ¹©½¥¸¡µ¥ôˆ¤(€€€€€€€€€€€€€€€€€€€À€ôÍÕ‰ÁÉ½•ÍÌ¹A½Á•¸¡µ°ÍÑ‘½ÕÐõÍÕ‰ÁÉ½•ÍÌ¹A%A°ÍÑ‘•ÉÈõÍÕ‰ÁÉ½•ÍÌ¹MQ=UP°Ñ•áÐõQÉÕ”¤(€€€€€€€€€€€€€€€€€€€¥˜À¹ÍÑ‘½ÕÐè(€€€€€€€€€€€€€€€€€€€€€€€™½È±¥¹”¥¸À¹ÍÑ‘½ÕÐè1¥ˆ¹¥‘±•}…‘¡Í•±˜¹±½œ°˜‰m‘•ÁÍtí±¥¹”¹ÉÍÑÉ¥À ¥ôˆ¤(€€€€€€€€€€€€€€€€€€€1¥ˆ¹¥‘±•}…‘¡Í•±˜¹±½œ°˜‰m‘•ÁÍt•á¥ÐõíÀ¹Ý…¥Ð ¥ôˆ¤(€€€€€€€€€€€•á•ÁÐá•ÁÑ¥½¸…Ì•áŒè1¥ˆ¹¥‘±•}…‘¡Í•±˜¹±½œ°˜‰mÉ•‰Õ¥±‘tí•áôˆ¤(€€€€€€€Ñ¡É•…‘¥¹œ¹Q¡É•…¡Ñ…É•ÐõÝ½É­•È°‘…•µ½¸õQÉÕ”¤¹ÍÑ…ÉÐ ¤((€€€‘•˜É•™É•Í¡}‘•Á•¹‘•¹¥•Ì¡Í•±˜¤è(€€€€€€€Í•±•Ñ•€ôÍ•Ð¡Í•±˜¹ÁÉ½™¥±”¹•Ð ‰‘•Á•¹‘•¹¥•Ìˆ°mt¤¤ìÉ½Ü€ôÍ•±˜¹‘•Á}±¥ÍÐ¹•Ñ}™¥ÉÍÑ}¡¥± ¤(€€€€€€€Ý¡¥±”É½Üè(€€€€€€€€€€€ˆ€ôÉ½Ü¹•Ñ}¡¥± ¤(€€€€€€€€€€€¥˜¥Í¥¹ÍÑ…¹”¡ˆ°Ñ¬¹¡•­	ÕÑÑ½¸¤èˆ¹Í•Ñ}…Ñ¥Ù”¡•Ñ…ÑÑÈ¡ˆ°€‰}‘•Á}­•äˆ°€ˆˆ¤¥¸Í•±•Ñ•¤(€€€€€€€€€€€É½Ü€ôÉ½Ü¹•Ñ}¹•áÑ}Í¥‰±¥¹œ ¤((€€€‘•˜…‘‘}…•ÍÌ¡Í•±˜°É•…‘½¹±äè‰½½°°‘¥É•Ñ½Éäè‰½½°¤è(€€€€€€€ˆ€ô±…µ‰‘„°ÈèÍ•±˜¹}™¥¹¥Í¡}…•ÍÌ¡°È°É•…‘½¹±ä°‘¥É•Ñ½Éä¤(€€€€€€€€¡Ñ¬¹¥±•¥…±½œ ¤¹Í•±•Ñ}™½±‘•È¡Í•±˜°9½¹”°ˆ¤¥˜‘¥É•Ñ½Éä•±Í”Ñ¬¹¥±•¥…±½œ ¤¹½Á•¸¡Í•±˜°9½¹”°ˆ¤¤((€€€‘•˜}™¥¹¥Í¡}…•ÍÌ¡Í•±˜°°È°É•…‘½¹±ä°‘¥É•Ñ½Éä¤è(€€€€€€€ÑÉäè½‰¨€ô¹Í•±•Ñ}™½±‘•É}™¥¹¥Í ¡È¤¥˜‘¥É•Ñ½Éä•±Í”¹½Á•¹}™¥¹¥Í ¡È¤ìÁ…Ñ €ô½‰¨¹•Ñ}Á…Ñ  ¤(€€€€€€€•á•ÁÐ1¥ˆ¹ÉÉ½ÈèÉ•ÑÕÉ¸(€€€€€€€¥Ñ•´€ôì‰Á…Ñ ˆèÍÑÈ¡A…Ñ ¡Á…Ñ ¤¹É•Í½±Ù” ¤¤°€‰Ñ…É•Ðˆè€ˆ½¥¹ÍÑ…±°¼ˆ€¬Í…™•}¹…µ”¡A…Ñ ¡Á…Ñ ¤¹¹…µ”¤°€‰É•…‘½¹±äˆèÉ•…‘½¹±åôìÍ•±˜¹ÁÉ½™¥±”¹Í•Ñ‘•™…Õ±Ð ‰…±±½Ý•‘}Á…Ñ¡Ìˆ°mt¤¹…ÁÁ•¹¡¥Ñ•´¤ìÍ•±˜¹Í…Ù•}ÁÉ½™¥±”¡9½¹”¤ìÍ•±˜¹É•™É•Í¡}…•ÍÌ ¤((€€€‘•˜É•™É•Í¡}…•ÍÌ¡Í•±˜¤è(€€€€€€€™½ÈŒ¥¸Í•±˜¹}¡¥±‘É•¸¡Í•±˜¹…•ÍÍ}±¥ÍÐ¤èÍ•±˜¹…•ÍÍ}±¥ÍÐ¹É•µ½Ù”¡Œ¤(€€€€€€€™½È¥Ñ•´¥¸Í•±˜¹ÁÉ½™¥±”¹•Ð ‰…±±½Ý•‘}Á…Ñ¡Ìˆ°mt¤è(€€€€€€€€€€€É½Ü€ôÑ¬¹1¥ÍÑ	½áI½Ü ¤ìÉ½Ü¹}¥Ñ•´€ô¥Ñ•´ìÉ½Ü¹Í•Ñ}¡¥±¡Ñ¬¹1…‰•°¡±…‰•°õ˜‰mì€I<œ¥˜¥Ñ•´¹•Ð É•…‘½¹±äœ°QÉÕ”¤•±Í”€I\œõtí¥Ñ•´¹•Ð Á…Ñ œ¥ôƒŠHí¥Ñ•´¹•Ð Ñ…É•Ðœ¥ôˆ°á…±¥¸ôÀ°ÝÉ…ÀõQÉÕ”¤¤ìÍ•±˜¹…•ÍÍ}±¥ÍÐ¹…ÁÁ•¹¡É½Ü¤((€€€‘•˜É•µ½Ù•}…•ÍÌ¡Í•±˜°}ˆ¤è(€€€€€€€É½Ü€ôÍ•±˜¹…•ÍÍ}±¥ÍÐ¹•Ñ}Í•±•Ñ•‘}É½Ü ¤(€€€€€€€¥˜É½Üè(€€€€€€€€€€€Í•±˜¹ÁÉ½™¥±”¹•Ð ‰…±±½Ý•‘}Á…Ñ¡Ìˆ°mt¤¹É•µ½Ù”¡É½Ü¹}¥Ñ•´¤ìÍ•±˜¹Í…Ù•}ÁÉ½™¥±”¡9½¹”¤ìÍ•±˜¹É•™É•Í¡}…•ÍÌ ¤((€€€‘•˜…‘‘}‘¥ÍŒ¡Í•±˜°}ˆ¤è(€€€€€€€À€ôÍ•±˜¹‘¥Í}•¹ÑÉä¹•Ñ}Ñ•áÐ ¤¹ÍÑÉ¥À ¤(€€€€€€€¥˜¹½ÐÀèÉ•ÑÕÉ¸(€€€€€€€Í•±˜¹ÁÉ½™¥±”¹Í•Ñ‘•™…Õ±Ð ‰‘¥ÍÌˆ°mt¤¹…ÁÁ•¹¡ì‰¥µ…”ˆèÍÑÈ¡A…Ñ ¡À¤¹•áÁ…¹‘ÕÍ•È ¤¹É•Í½±Ù” ¤¥ô¤ìÍ•±˜¹Í…Ù•}ÁÉ½™¥±”¡9½¹”¤ìÍ•±˜¹É•™É•Í¡}‘¥ÍÌ ¤ìÍ•±˜¹‘¥Í}•¹ÑÉä¹Í•Ñ}Ñ•áÐ ˆˆ¤((€€€‘•˜É•™É•Í¡}‘¥ÍÌ¡Í•±˜¤è(€€€€€€€Í•±˜¹‘¥Í}ÍÑ…ÑÕÌ¹Í•Ñ}Ñ•áÐ ‰¥Í¡¤…ÍÍ½¥…Ñ¤è€ˆ€¬ÍÑÈ¡±•¸¡Í•±˜¹ÁÉ½™¥±”¹•Ð ‰‘¥ÍÌˆ°mt¤¤¤¤((€€€‘•˜ÉÕ¹}¡½ÍÑ}Ñ•ÍÑ}…Õ‘¥¼¡Í•±˜¤è(€€€€€€€¡•±Á•È€ôÍ¡ÕÑ¥°¹Ý¡¥  ‰ÁŒµ…µ”µÍ…¹‘‰½àˆ¤½ÈÍÑÈ¡	M€¼€‰‰¥¸ˆ€¼€‰ÁŒµ…µ”µÍ…¹‘‰½àˆ¤(€€€€€€€¥˜¹½ÐÍ•±˜¹ÕÉÉ•¹Ñ}ÁÉ½™¥±”èÉ•ÑÕÉ¸Í•±˜¹±½œ ‰%°Ñ•ÍÐ…Õ‘¥¼É¥¡¥•‘”Õ¸ÁÉ½™¥±¼É•…Ñ¼”Í•±•é¥½¹…Ñ¼¸ˆ¤(€€€€€€€Í•±˜¹…Õ‘¥½}¥¹™¼¹Í•Ñ}Ñ•áÐ ‰Q•ÍÐ…Õ‘¥¼…ÙÙ¥…Ñ¼ì½¹ÑÉ½±±„…¹¡”¥°Ñ…ˆ1½œ¸ˆ¤(€€€€€€€Í•±˜¹}ÍÁ…Ý¹}±½•¡m¡•±Á•È°€‰‘¥…œˆ°ÍÑÈ¡Í•±˜¹ÕÉÉ•¹Ñ}ÁÉ½™¥±”¤°€ˆ´´ˆ°€‰Í ˆ°€ˆµ±Œˆ°€‰Á…Ñ°¥¹™¼€˜˜Á…Á±…ä€½ÕÍÈ½Í¡…É”½Í½Õ¹‘Ì½™É••‘•Í­Ñ½À½ÍÑ•É•¼½½µÁ±•Ñ”¹½„‰t°€‰…Õ‘¥¼ˆ¤(()‘•˜I9%QI}%9`¡Ù…±Õ”èÍÑÈ¤€´ø¥¹Ðè(€€€ÑÉäèÉ•ÑÕÉ¸I9IIL¹¥¹‘•à¡Ù…±Õ”¤(€€€•á•ÁÐY…±Õ•ÉÉ½ÈèÉ•ÑÕÉ¸€Ä(()±…ÍÌ5…¹…•ÉÁÀ¡Ñ¬¹ÁÁ±¥…Ñ¥½¸¤è(€€€‘•˜}}¥¹¥Ñ}|¡Í•±˜¤èÍÕÁ•È ¤¹}}¥¹¥Ñ}|¡…ÁÁ±¥…Ñ¥½¹}¥õAA}%¤(€€€‘•˜‘½}…Ñ¥Ù…Ñ”¡Í•±˜¤è5…¹…•É]¥¹‘½Ü¡Í•±˜¤¹ÁÉ•Í•¹Ð ¤(()¥˜}}¹…µ•}|€ôô€‰}}µ…¥¹}|ˆè(€€€5…¹…•ÉÁÀ ¤¹ÉÕ¸¡ÍåÌ¹…ÉØ¤(
