@@ -58,6 +58,7 @@ def discover() -> list[dict]:
             if _looks_like_proton(p) or _looks_like_wine_runner(p):
                 item = classify(p, source)
                 found[str(p)] = item
+    # The system Wine is represented explicitly even though it is not imported as a runner.
     wine = Path("/usr/bin/wine")
     if wine.exists():
         found["/usr/bin/wine"] = {

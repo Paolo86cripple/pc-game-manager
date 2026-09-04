@@ -37,3 +37,17 @@ La scheda Grafica include un catalogo GitHub per DXVK e D7VK, installazione e ri
 ## Grafica 2.11
 
 PC Game Manager gestisce ora DXVK, D7VK, VKD3D-Proton, DXVK-NVAPI e dgVoodoo2 da cataloghi upstream. I codec video retro possono essere installati nel prefix tramite Winetricks (allcodecs, Indeo, Cinepak, MP3 DirectShow, ffdshow, Xvid, LAV Filters, Quartz, AMStream, AVIFile32 e Bink). Snapshot/rollback/import-export non fanno parte della roadmap; il blocco corrispondente è sostituito dal gestore dgVoodoo2.
+
+## 2.12 — review sandbox e riordino GUI
+
+- Runtime usa due sottoschede: **Wine / Proton** e **Componenti grafici**.
+- Grafica contiene solo le scelte del profilo; cataloghi/installazione sono stati spostati fuori dalla pagina.
+- Codec retro sono nella scheda **Dipendenze**.
+- Audio è stato assorbito nella scheda **Sandbox**.
+- Profilo espone architettura Wine e versione Windows; le impostazioni Wine possono essere applicate a un prefix esistente.
+- È possibile disattivare esplicitamente renderer esterni, VKD3D-Proton e DXVK-NVAPI.
+- La GUI mostra la policy sandbox effettiva e segnala rete host/XWayland come eccezioni di isolamento.
+- Nuovi profili montano la directory del gioco in sola lettura per default.
+- DXVK/D7VK scelgono le DLL 32/64 bit in base al PE del gioco.
+
+La review completa è in `docs/sandbox-review.md`.

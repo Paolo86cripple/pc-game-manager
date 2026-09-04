@@ -1,2 +1,724 @@
 #!/usr/bin/env python3
-# placeholder
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import re
+import shlex
+import shutil
+import stat
+import struct
+import subprocess
+import sys
+from pathlib import Path
+from pathlib import PurePosixPath
+
+DEFAULT_CAPS = {
+    "wayland": True,
+    "xwayland": True,
+    "vulkan": True,
+    "audio": True,
+    "input": True,
+    "cdemu": False,
+    "udisks2": False,
+}
+
+
+def die(msg: str) -> None:
+    print(f"pc-game-sandbox: {msg}", file=sys.stderr)
+    raise SystemExit(2)
+
+
+def require(cmd: str) -> None:
+    if shutil.which(cmd) is None:
+        die(f"comando richiesto non trovato: {cmd}")
+
+
+def load_profile(path: str) -> dict:
+    p = Path(path).expanduser().resolve()
+    try:
+        data = json.loads(p.read_text(encoding="utf-8"))
+    except Exception as exc:
+        die(f"impossibile leggere il profilo {p}: {exc}")
+    caps = data.setdefault("capabilities", {})
+    for key, default in DEFAULT_CAPS.items():
+        caps.setdefault(key, default)
+    data.setdefault("network", "none")
+    data.setdefault("input_devices", [])
+    data.setdefault("allowed_paths", [])
+    # Keep old profiles compatible: historically /game was writable. New profiles
+    # created by the GUI default to read-only and can opt in to RW for legacy games.
+    data.setdefault("game_root_readonly", False)
+    data.setdefault("selected_runner", None)
+    data.setdefault("gpu", {"mode": "auto"})
+    data.setdefault("renderer", "wined3d")
+    data.setdefault("renderer_path", "")
+    data.setdefault("vkd3d_enabled", False)
+    data.setdefault("vkd3d_path", "")
+    data.setdefault("nvapi_enabled", False)
+    data.setdefault("nvapi_path", "")
+    # Migrate legacy profiles before applying new defaults.
+    if "display_backend" not in data and "prefer_wayland" in data:
+        data["display_backend"] = "wayland" if data.get("prefer_wayland") else "xwayland"
+    data.setdefault("display_backend", "auto")
+    data.setdefault("xwayland_fallback", True)
+    data.setdefault("wayland_input_status", "unknown")
+    data.setdefault("wayland_input_reason", "")
+    data.setdefault("wineprefix", "/prefix")
+    data.setdefault("wine_arch", "win64")
+    data.setdefault("windows_version", "windows10")
+    data.setdefault("audio_backend", "pulse")
+    return data
+
+
+def bind_if_exists(cmd: list[str], source: str, target: str | None = None, readonly: bool = False) -> None:
+    source = os.path.expanduser(source)
+    if os.path.exists(source):
+        cmd += ["--ro-bind" if readonly else "--bind", source, target or source]
+
+
+def devbind_if_exists(cmd: list[str], source: str, target: str | None = None) -> None:
+    source = os.path.expanduser(source)
+    if os.path.exists(source):
+        cmd += ["--dev-bind", source, target or source]
+
+
+def safe_name(value: str) -> str:
+    return re.sub(r"[^A-Za-z0-9._-]+", "_", value).strip("._") or "runtime"
+
+
+def add_common_root(cmd: list[str], start_dir: str, isolate_ipc: bool = True) -> None:
+    # Build namespaces explicitly instead of --unshare-all so XWayland can opt out
+    # of IPC isolation when needed for MIT-SHM compatibility.
+    namespaces = ["--unshare-user", "--unshare-pid", "--unshare-net", "--unshare-uts", "--unshare-cgroup-try"]
+    if isolate_ipc:
+        namespaces.append("--unshare-ipc")
+    cmd += namespaces + [
+        "--die-with-parent", "--new-session", "--clearenv",
+        "--proc", "/proc", "--dev", "/dev", "--tmpfs", "/tmp", "--tmpfs", "/run",
+        "--dir", "/home", "--dir", "/home/game", "--dir", "/home/game/.config",
+        "--dir", "/home/game/.local", "--dir", "/home/game/.local/share",
+        "--dir", "/home/game/.cache", "--dir", "/game", "--dir", "/prefix",
+        "--dir", "/saves", "--dir", "/install", "--dir", "/runner",
+        "--setenv", "HOME", "/home/game", "--setenv", "PATH", "/usr/bin:/bin",
+        "--chdir", start_dir,
+    ]
+    for p in ("/usr", "/etc", "/bin", "/sbin", "/lib", "/lib64", "/sys"):
+        if os.path.exists(p):
+            cmd += ["--ro-bind", p, p]
+
+
+def add_graphics(cmd: list[str], env: dict[str, str], caps: dict, gpu: dict | None, display_backend: str) -> None:
+    if caps.get("vulkan"):
+        devbind_if_exists(cmd, "/dev/dri")
+        bind_if_exists(cmd, "/sys/class/drm", "/sys/class/drm", readonly=True)
+        for key in ("VK_ICD_FILENAMES", "VK_DRIVER_FILES", "VK_LAYER_PATH"):
+            if key in os.environ:
+                env[key] = os.environ[key]
+        gpu = gpu or {"mode": "auto"}
+        if gpu.get("mode") == "pci":
+            vendor_device = str(gpu.get("vendor_device", ""))
+            pci = str(gpu.get("pci", ""))
+            if re.fullmatch(r"[0-9a-fA-F]{4}:[0-9a-fA-F]{4}", vendor_device):
+                env["MESA_VK_DEVICE_SELECT"] = f"{vendor_device}!"
+                env["MESA_VK_DEVICE_SELECT_FORCE_DEFAULT_DEVICE"] = "1"
+            if re.fullmatch(r"[0-9a-fA-F]{4}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}\.[0-9a-fA-F]", pci):
+                env["DRI_PRIME"] = f"pci-{pci.replace(':', '_').replace('.', '_')}"
+    runtime = os.environ.get("XDG_RUNTIME_DIR")
+    if not runtime:
+        return
+    env["XDG_RUNTIME_DIR"] = "/run"
+    if display_backend == "wayland" and caps.get("wayland"):
+        wl = os.environ.get("WAYLAND_DISPLAY", "wayland-0")
+        bind_if_exists(cmd, os.path.join(runtime, wl), "/run/wayland-0")
+        if os.path.exists(os.path.join(runtime, wl)):
+            env["WAYLAND_DISPLAY"] = "wayland-0"
+            env["GDK_BACKEND"] = "wayland"
+    if display_backend == "xwayland" and caps.get("xwayland"):
+        bind_if_exists(cmd, "/tmp/.X11-unix", "/tmp/.X11-unix", readonly=True)
+        xauth = os.environ.get("XAUTHORITY")
+        if xauth and os.path.isfile(os.path.expanduser(xauth)):
+            bind_if_exists(cmd, xauth, "/run/xauth", readonly=True)
+            env["XAUTHORITY"] = "/run/xauth"
+        display = os.environ.get("DISPLAY")
+        if display:
+            env["DISPLAY"] = display
+        env["GDK_BACKEND"] = "x11"
+
+
+def add_audio(cmd: list[str], env: dict[str, str], caps: dict, backend: str = "pulse") -> None:
+    if not caps.get("audio") or backend == "disabled":
+        return
+    runtime = os.environ.get("XDG_RUNTIME_DIR")
+    if not runtime:
+        return
+    env["XDG_RUNTIME_DIR"] = "/run"
+    env["PULSE_SERVER"] = "unix:/run/pulse/native"
+    bind_if_exists(cmd, os.path.join(runtime, "pipewire-0"), "/run/pipewire-0", readonly=False)
+    bind_if_exists(cmd, os.path.join(runtime, "pipewire-0.lock"), "/run/pipewire-0.lock", readonly=True)
+    bind_if_exists(cmd, os.path.join(runtime, "pulse"), "/run/pulse", readonly=False)
+    if os.environ.get("PIPEWIRE_REMOTE"):
+        env["PIPEWIRE_REMOTE"] = os.environ["PIPEWIRE_REMOTE"]
+    for key in ("PIPEWIRE_LATENCY",):
+        if os.environ.get(key):
+            env[key] = os.environ[key]
+
+
+def _validated_input_device(value: str) -> Path:
+    raw = Path(value).expanduser()
+    if not raw.is_absolute():
+        die(f"dispositivo input non assoluto: {value}")
+    try:
+        resolved = raw.resolve(strict=True)
+    except OSError as exc:
+        die(f"dispositivo input non valido: {value}: {exc}")
+    # Do not accept /dev/input/../... traversal or arbitrary character devices.
+    if resolved.parent != Path("/dev/input") or not re.fullmatch(r"(?:event|js)\d+", resolved.name):
+        die(f"dispositivo input non consentito: {value}")
+    try:
+        if not stat.S_ISCHR(resolved.stat().st_mode):
+            die(f"dispositivo input non character-device: {resolved}")
+    except OSError as exc:
+        die(f"impossibile verificare il dispositivo input {resolved}: {exc}")
+    return resolved
+
+
+def add_input(cmd: list[str], profile: dict) -> None:
+    if not profile.get("capabilities", {}).get("input"):
+        return
+    devices = profile.get("input_devices") or []
+    if not devices:
+        return
+    bind_if_exists(cmd, "/run/udev", "/run/udev", readonly=True)
+    # Explicitly selected low-level devices (gamepads/joysticks). Keyboard and mouse
+    # input normally arrive through Wayland/XWayland and do not require /dev/input.
+    for device in devices:
+        d = _validated_input_device(str(device))
+        devbind_if_exists(cmd, str(d), str(d))
+
+
+def _validated_install_target(value: str, fallback_name: str) -> str:
+    target = value.strip() or "/install/" + safe_name(fallback_name)
+    p = PurePosixPath(target)
+    # allowed_paths is deliberately confined to /install. This prevents a hand-edited
+    # profile from shadowing /usr, /prefix, /runner, /run, etc. with an arbitrary host
+    # path and keeps the allow-list semantics auditable.
+    if not p.is_absolute() or ".." in p.parts or len(p.parts) < 3 or p.parts[:2] != ("/", "install"):
+        die(f"target autorizzato fuori da /install: {target}")
+    return str(p)
+
+
+def add_game_paths(cmd: list[str], profile: dict, require_game_root: bool) -> None:
+    root_value = profile.get("game_root")
+    if root_value:
+        root = Path(root_value).expanduser().resolve()
+        if not root.is_dir():
+            die(f"game_root non esiste: {root}")
+        cmd += ["--ro-bind" if profile.get("game_root_readonly", False) else "--bind", str(root), "/game"]
+    elif require_game_root:
+        die("profile.game_root deve essere impostato")
+    for key, target in (("prefix_root", "/prefix"), ("save_root", "/saves"), ("sandbox_home", "/home/game")):
+        value = profile.get(key)
+        if value:
+            host = Path(value).expanduser().resolve()
+            host.mkdir(parents=True, exist_ok=True)
+            cmd += ["--bind", str(host), target]
+    for item in profile.get("allowed_paths") or []:
+        if not isinstance(item, dict):
+            continue
+        source = str(item.get("path", "")).strip()
+        if not source.startswith("/"):
+            die(f"percorso autorizzato non assoluto: {source}")
+        host = Path(source).expanduser().resolve()
+        if not host.exists():
+            die(f"percorso autorizzato inesistente: {host}")
+        target = _validated_install_target(str(item.get("target", "")), host.name)
+        cmd += ["--ro-bind" if item.get("readonly", True) else "--bind", str(host), target]
+
+
+def add_runner(cmd: list[str], profile: dict) -> dict | None:
+    selected = profile.get("selected_runner")
+    if not selected or not isinstance(selected, dict) or selected.get("kind") == "wine-system":
+        return None
+    host = Path(str(selected.get("path", "")).strip()).expanduser().resolve()
+    if not host.is_dir():
+        die(f"runtime selezionato inesistente: {host}")
+    cmd += ["--ro-bind", str(host), "/runner"]
+    return selected
+
+
+def autodetect_renderer_dirs(renderer: str) -> list[Path]:
+    renderer = renderer.lower()
+    names = {"d3d11.dll", "dxgi.dll"} if renderer == "dxvk" else {"ddraw.dll"}
+    candidates: list[Path] = []
+    home = Path.home()
+    candidates += [home / ".local/share/pc-game-manager/dxvk", home / ".local/share/pc-game-manager/d7vk", home / ".local/share/pc-game-manager/dgvoodoo", Path("/usr/share/dxvk"), Path("/usr/share/d7vk"), Path("/opt/dxvk"), Path("/opt/d7vk")]
+    pacman = shutil.which("pacman")
+    if pacman:
+        try:
+            package = "dxvk" if renderer == "dxvk" else "d7vk"
+            out = subprocess.check_output([pacman, "-Ql", package], text=True, stderr=subprocess.DEVNULL)
+            for line in out.splitlines():
+                parts = line.split(None, 1)
+                if len(parts) == 2:
+                    q = Path(parts[1].strip())
+                    if q.exists(): candidates.append(q if q.is_dir() else q.parent)
+        except Exception:
+            pass
+    seen = set()
+    out_dirs = []
+    for base in candidates:
+        try: base = base.resolve()
+        except Exception: continue
+        if not base.is_dir() or str(base) in seen: continue
+        seen.add(str(base)); out_dirs.append(base)
+    return [d for d in out_dirs if any(p.is_file() and p.name.lower() in names for p in d.rglob("*.dll")) or any(p.name.lower() in names for p in d.glob("*.dll"))]
+
+
+def pe_bitness(path: Path) -> int | None:
+    """Return 32/64 for a PE executable, or None when it cannot be identified."""
+    try:
+        with path.open("rb") as f:
+            if f.read(2) != b"MZ":
+                return None
+            f.seek(0x3C)
+            pe_off_raw = f.read(4)
+            if len(pe_off_raw) != 4:
+                return None
+            pe_off = struct.unpack("<I", pe_off_raw)[0]
+            f.seek(pe_off)
+            if f.read(4) != b"PE\0\0":
+                return None
+            machine_raw = f.read(2)
+            if len(machine_raw) != 2:
+                return None
+            machine = struct.unpack("<H", machine_raw)[0]
+    except OSError:
+        return None
+    if machine == 0x014C:  # IMAGE_FILE_MACHINE_I386
+        return 32
+    if machine in {0x8664, 0xAA64}:  # AMD64 / ARM64
+        return 64
+    return None
+
+
+def _profile_executable_bitness(profile: dict) -> int | None:
+    raw = str(profile.get("executable", "")).strip()
+    if not raw:
+        return None
+    p = Path(raw).expanduser()
+    if not p.is_absolute() and profile.get("game_root"):
+        p = Path(str(profile.get("game_root"))).expanduser() / p
+    try:
+        p = p.resolve()
+    except OSError:
+        return None
+    return pe_bitness(p) if p.is_file() else None
+
+
+def _dll_arch_hint(path: Path) -> int | None:
+    parts = {part.lower() for part in path.parts}
+    if parts & {"x32", "x86", "win32", "32bit", "32-bit"}:
+        return 32
+    if parts & {"x64", "x86_64", "amd64", "win64", "64bit", "64-bit"}:
+        return 64
+    return None
+
+
+def renderer_dlls(renderer_path: str, renderer: str, bits: int | None = None) -> list[Path]:
+    root = Path(renderer_path).expanduser().resolve() if renderer_path.strip() else None
+    if root is None or not root.is_dir():
+        dirs = autodetect_renderer_dirs(renderer)
+        if not dirs:
+            return []
+        root = dirs[0]
+    if renderer == "d7vk":
+        names = {"ddraw.dll", "d3d7.dll", "d3d6.dll", "d3d5.dll", "d3d3.dll"}
+    elif renderer == "dgvoodoo":
+        names = {"ddraw.dll", "d3dim.dll", "d3d8.dll", "d3d9.dll", "glide.dll", "glide2x.dll", "glide3x.dll"}
+    else:
+        names = {"d3d8.dll", "d3d9.dll", "d3d10core.dll", "d3d11.dll", "dxgi.dll"}
+    files = sorted(p for p in root.rglob("*.dll") if p.name.lower() in {n.lower() for n in names})
+    if bits in {32, 64}:
+        exact = [p for p in files if _dll_arch_hint(p) == bits]
+        # Prefer explicitly architecture-labelled trees. If upstream ships a flat
+        # layout, retain it instead of rejecting a valid package.
+        if exact:
+            files = exact
+    # Never mount two different files to the same DLL destination. Prefer the first
+    # deterministic match after architecture filtering.
+    unique: dict[str, Path] = {}
+    for p in files:
+        unique.setdefault(p.name.lower(), p)
+    return list(unique.values())
+
+
+def _component_dlls(path_value: str, names: set[str], bits: int | None = None) -> list[Path]:
+    root = Path(path_value).expanduser().resolve() if str(path_value).strip() else None
+    if root is None or not root.is_dir(): return []
+    wanted = {n.lower() for n in names}
+    files = sorted(p for p in root.rglob("*.dll") if p.name.lower() in wanted)
+    if bits in {32, 64}:
+        exact = [p for p in files if _dll_arch_hint(p) == bits]
+        if exact:
+            files = exact
+    unique: dict[str, Path] = {}
+    for p in files:
+        unique.setdefault(p.name.lower(), p)
+    return list(unique.values())
+
+
+def add_graphics_addons(cmd: list[str], env: dict[str, str], profile: dict) -> None:
+    overrides = []
+    bits = _profile_executable_bitness(profile)
+    if bits is None:
+        bits = 32 if str(profile.get("wine_arch", "win64")) == "win32" else 64
+    if profile.get("vkd3d_enabled"):
+        if not profile.get("capabilities", {}).get("vulkan"): die("VKD3D-Proton richiede Vulkan")
+        files = _component_dlls(str(profile.get("vkd3d_path", "")), {"d3d12.dll", "d3d12core.dll"}, bits)
+        if not files: die("VKD3D-Proton abilitato ma DLL non trovate")
+        for dll in files: cmd += ["--ro-bind", str(dll), f"/game/{dll.name}"]
+        overrides += ["d3d12", "d3d12core"]
+        print(f"[graphics] VKD3D-Proton: uso DLL {bits}-bit", file=sys.stderr)
+    if profile.get("nvapi_enabled"):
+        files = _component_dlls(str(profile.get("nvapi_path", "")), {"nvapi.dll", "nvapi64.dll"}, bits)
+        if not files: die("DXVK-NVAPI abilitato ma DLL non trovate")
+        for dll in files: cmd += ["--ro-bind", str(dll), f"/game/{dll.name}"]
+        overrides += [p.stem for p in files]
+        print(f"[graphics] DXVK-NVAPI: uso DLL {bits}-bit", file=sys.stderr)
+    if overrides:
+        current = env.get("WINEDLLOVERRIDES", "")
+        extra = ",".join(sorted(set(overrides))) + "=n,b"
+        env["WINEDLLOVERRIDES"] = f"{current};{extra}" if current else extra
+
+
+def add_renderer(cmd: list[str], env: dict[str, str], profile: dict) -> None:
+    renderer = str(profile.get("renderer", "wined3d")).lower()
+    if renderer in ("auto", "wined3d"):
+        return
+    if not profile.get("capabilities", {}).get("vulkan"):
+        die(f"renderer {renderer} richiede Vulkan")
+    bits = _profile_executable_bitness(profile)
+    if bits is None:
+        bits = 32 if str(profile.get("wine_arch", "win64")) == "win32" else 64
+    files = renderer_dlls(str(profile.get("renderer_path", "")), renderer, bits)
+    if not files:
+        die(f"nessuna DLL {renderer} trovata nel runtime selezionato")
+    print(f"[graphics] {renderer.upper()}: uso DLL {bits}-bit", file=sys.stderr)
+    for dll in files:
+        cmd += ["--ro-bind", str(dll), f"/game/{dll.name}"]
+    if renderer == "dxvk":
+        env["WINEDLLOVERRIDES"] = "d3d8,d3d9,d3d10core,d3d11,dxgi=n,b"
+    elif renderer == "dgvoodoo":
+        env["WINEDLLOVERRIDES"] = "ddraw,d3dim,d3d8,d3d9,glide,glide2x,glide3x=n,b"
+    else:
+        env["WINEDLLOVERRIDES"] = "ddraw=n,b"
+
+
+def runner_environment(env: dict[str, str], selected: dict | None) -> str:
+    env["WINEPREFIX"] = "/prefix"
+    if not selected or selected.get("kind") == "wine-system":
+        return "/usr/bin/wine"
+    kind = str(selected.get("kind", "wine")).lower()
+    path = "/runner"
+    if kind == "proton":
+        env["PROTONPATH"] = path
+        env["GAMEID"] = "pc-game-manager"
+        if Path("/usr/bin/umu-run").exists():
+            return "/usr/bin/umu-run"
+        die("questo runtime Proton richiede umu-run")
+    for candidate in (f"{path}/bin/wine", f"{path}/dist/bin/wine", f"{path}/files/bin/wine", f"{path}/wine"):
+        # The existence check is done on the host namespace before bwrap; fallback is
+        # still useful when a runtime uses a generated symlink tree.
+        if Path(candidate).exists():
+            return candidate
+    return f"{path}/bin/wine"
+
+
+def build_command(profile: dict, payload: list[str], require_game_root: bool = True, force_network: bool = False, display_backend_override: str | None = None) -> list[str]:
+    require("bwrap")
+    start_dir = "/game" if require_game_root else "/home/game"
+    cmd = ["bwrap"]
+    env: dict[str, str] = {}
+    configured_backend = str(profile.get("display_backend", "auto")).lower()
+    if configured_backend not in {"auto", "wayland", "xwayland"}:
+        configured_backend = "auto"
+    display_backend = display_backend_override or configured_backend
+    if display_backend == "auto":
+        display_backend = "wayland" if profile.get("capabilities", {}).get("wayland") else "xwayland"
+    use_xwayland = display_backend == "xwayland" and bool(profile.get("capabilities", {}).get("xwayland"))
+    # XWayland's MIT-SHM extension uses SysV shared memory IDs. With a distinct IPC
+    # namespace the host X server cannot resolve those IDs, causing BadValue on
+    # X_ShmPutImage. Keep IPC isolated by default; make the compatibility exception
+    # explicit and only for the XWayland profile mode.
+    isolate_ipc = not use_xwayland
+    add_common_root(cmd, start_dir, isolate_ipc=isolate_ipc)
+    add_game_paths(cmd, profile, require_game_root)
+    selected = add_runner(cmd, profile)
+    add_graphics(cmd, env, profile.get("capabilities", {}), profile.get("gpu"), display_backend)
+    env["PC_GAME_MANAGER_DISPLAY_BACKEND"] = display_backend
+    if use_xwayland:
+        env["PC_GAME_MANAGER_XWAYLAND"] = "1"
+    add_audio(cmd, env, profile.get("capabilities", {}), str(profile.get("audio_backend", "pulse")))
+    add_input(cmd, profile)
+    add_renderer(cmd, env, profile)
+    add_graphics_addons(cmd, env, profile)
+    network_mode = str(profile.get("network", "none")).lower()
+    if network_mode not in {"none", "host"}:
+        die(f"modalità rete non valida: {network_mode}")
+    if force_network or network_mode == "host":
+        print("[sandbox] rete host condivisa: il processo può raggiungere Internet e LAN", file=sys.stderr)
+        cmd.append("--share-net")
+    env["LANG"] = os.environ.get("LANG", "C")
+    env["LC_ALL"] = os.environ.get("LC_ALL", "C")
+    # Do not leak the host login name into the guest environment.
+    env["USER"] = "game"
+    env["LOGNAME"] = "game"
+    env["WINEPREFIX"] = str(profile.get("wineprefix", "/prefix"))
+    env["XDG_CONFIG_HOME"] = "/home/game/.config"
+    env["XDG_DATA_HOME"] = "/home/game/.local/share"
+    env["XDG_CACHE_HOME"] = "/home/game/.cache"
+    for key, value in env.items():
+        cmd += ["--setenv", key, value]
+    cmd += ["--"] + payload
+    return cmd
+
+
+def list_devices() -> int:
+    require("udevadm")
+    root = Path("/dev/input")
+    for path in sorted(root.glob("event*")) if root.is_dir() else []:
+        try:
+            props = subprocess.check_output(["udevadm", "info", "--query=property", f"--name={path}"], text=True, stderr=subprocess.DEVNULL)
+        except subprocess.CalledProcessError:
+            continue
+        p = dict(line.split("=", 1) for line in props.splitlines() if "=" in line)
+        if p.get("ID_INPUT_GAMEPAD") == "1" or p.get("ID_INPUT_JOYSTICK") == "1":
+            print(f"{path}\t{p.get('ID_VENDOR','?')}:{p.get('ID_MODEL','?')}\t{p.get('NAME','').strip(chr(34))}")
+    return 0
+
+
+def prefix_create(profile: dict, rebuild: bool = False) -> int:
+    raw_prefix = str(profile.get("prefix_root", "")).strip()
+    if not raw_prefix:
+        die("profile.prefix_root deve essere impostato")
+    prefix = Path(raw_prefix).expanduser().resolve()
+    if rebuild and prefix.exists():
+        shutil.rmtree(prefix)
+    prefix.mkdir(parents=True, exist_ok=True)
+    wprefix = str(profile.get("wineprefix", "/prefix"))
+    arch = str(profile.get("wine_arch", "win64"))
+    version_map = {
+        "windows11": "win11", "windows10": "win10", "windows81": "win81", "windows8": "win8",
+        "windows7": "win7", "windowsxp64": "winxp", "windowsxp": "winxp", "windows2003": "win2003",
+        "windows2000": "win2000", "windowsme": "winme", "windows98": "win98", "windows95": "win95",
+    }
+    winver = version_map.get(str(profile.get("windows_version", "windows10")).lower(), "win10")
+    script = ["set -eu", f"export WINEPREFIX={shlex.quote(wprefix)}"]
+    if arch in {"win32", "win64"}:
+        script.append(f"export WINEARCH={shlex.quote(arch)}")
+    script += [
+        "wineboot -u",
+        f"winecfg -v {shlex.quote(winver)}",
+        'wine reg add "HKCU\\Software\\Wine\\Drivers" /v Audio /d pulse /f',
+        "wineserver -w",
+    ]
+    if str(profile.get("audio_backend", "pulse")) == "disabled":
+        script = [line for line in script if 'Drivers" /v Audio' not in line]
+    payload = ["sh", "-lc", "\n".join(script)]
+    os.execvp("bwrap", build_command(profile, payload, require_game_root=False, force_network=False))
+    return 0
+
+
+def install_deps(profile: dict, verbs: list[str]) -> int:
+    if not verbs:
+        die("deps richiede almeno un componente")
+    payload = ["winetricks", *verbs]
+    os.execvp("bwrap", build_command(profile, payload, require_game_root=False, force_network=True))
+    return 0
+
+
+def add_transient_payload(cmd: list[str], host_file: Path) -> str:
+    host_file = host_file.expanduser().resolve()
+    if not host_file.is_file():
+        die(f"file non trovato: {host_file}")
+    parent = host_file.parent
+    # An installer only needs to read its source directory. Prefix/HOME remain the
+    # explicit writable destinations; this prevents a Windows process from modifying
+    # neighbouring downloads on the host.
+    cmd += ["--ro-bind", str(parent), "/payload"]
+    return "Z:/payload/" + host_file.name
+
+
+def run_file(profile: dict, host_file: str, args: list[str]) -> int:
+    path = Path(host_file).expanduser().resolve()
+    env: dict[str, str] = {}
+    executable = runner_environment(env, profile.get("selected_runner"))
+    cmd = build_command(profile, ["true"], require_game_root=False, force_network=False)
+    # build_command appends -- true as its payload terminator; insert the transient
+    # installer/executable bind before that terminator.
+    cmd = cmd[:-2]
+    wine_path = add_transient_payload(cmd, path)
+    payload = ["env"] + [f"{k}={v}" for k, v in env.items()] + [executable, wine_path, *args]
+    cmd += ["--"] + payload
+    os.execvp("bwrap", cmd)
+    return 0
+
+
+def _run_bwrap_once(profile: dict, payload: list[str], backend: str) -> int:
+    cmd = build_command(profile, payload, require_game_root=True, force_network=False, display_backend_override=backend)
+    p = subprocess.Popen(cmd)
+    return p.wait()
+
+
+def wayland_keyboard_available() -> tuple[bool, str]:
+    runtime = os.environ.get("XDG_RUNTIME_DIR")
+    if not runtime:
+        return False, "XDG_RUNTIME_DIR assente"
+    wl = Path(runtime) / os.environ.get("WAYLAND_DISPLAY", "wayland-0")
+    if not wl.exists():
+        return False, f"socket Wayland non trovato: {wl}"
+    wayland_info = shutil.which("wayland-info")
+    if not wayland_info:
+        return True, "wayland-info non disponibile; verificata solo la socket"
+    try:
+        out = subprocess.check_output([wayland_info, "-i", "wl_seat"], text=True, stderr=subprocess.STDOUT, timeout=3)
+    except Exception as exc:
+        return False, f"wayland-info fallito: {exc}"
+    if re.search(r"capabilities:.*\bkeyboard\b", out, re.I):
+        return True, "wl_seat espone keyboard"
+    return False, "wl_seat non espone keyboard"
+
+
+def _choose_initial_backend(profile: dict) -> str:
+    configured = str(profile.get("display_backend", "auto")).lower()
+    if configured in {"wayland", "xwayland"}:
+        return configured
+
+    input_status = str(profile.get("wayland_input_status", "unknown")).lower()
+    if input_status == "broken" and profile.get("capabilities", {}).get("xwayland"):
+        reason = str(profile.get("wayland_input_reason", "")).strip() or "input Wayland segnato come non funzionante per questo profilo"
+        print(f"[display] Auto: uso XWayland (profilo marcato Wayland broken: {reason})", file=sys.stderr)
+        return "xwayland"
+
+    if profile.get("capabilities", {}).get("wayland"):
+        ok, reason = wayland_keyboard_available()
+        if ok:
+            print(f"[display] preflight Wayland: OK ({reason})", file=sys.stderr)
+            if input_status == "working":
+                print("[display] Auto: Wayland già verificato per questo profilo", file=sys.stderr)
+            else:
+                print("[display] Auto: provo Wayland nativo; capability OK ma input non ancora verificato", file=sys.stderr)
+            return "wayland"
+        print(f"[display] preflight Wayland: FALLITO ({reason})", file=sys.stderr)
+    if profile.get("capabilities", {}).get("xwayland"):
+        print("[display] Auto: fallback preventivo a XWayland", file=sys.stderr)
+        return "xwayland"
+    return "wayland"
+
+
+def run_wine(profile: dict, args: list[str]) -> int:
+    env: dict[str, str] = {}
+    executable = runner_environment(env, profile.get("selected_runner"))
+    payload = ["env"] + [f"{k}={v}" for k, v in env.items()] + [executable, *args]
+    backend = _choose_initial_backend(profile)
+    code = _run_bwrap_once(profile, payload, backend)
+    if (str(profile.get("display_backend", "auto")).lower() == "auto"
+            and backend == "wayland" and code != 0
+            and profile.get("xwayland_fallback", True)
+            and profile.get("capabilities", {}).get("xwayland")):
+        print("[display] Wayland nativo terminato con errore; fallback automatico a XWayland", file=sys.stderr)
+        return _run_bwrap_once(profile, payload, "xwayland")
+    return code
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(prog="pc-game-sandbox")
+    sub = ap.add_subparsers(dest="action", required=True)
+    for name in ("run", "exec", "diag"):
+        p = sub.add_parser(name); p.add_argument("profile"); p.add_argument("payload", nargs=argparse.REMAINDER)
+    p = sub.add_parser("wine"); p.add_argument("profile"); p.add_argument("wine_args", nargs=argparse.REMAINDER)
+    p = sub.add_parser("run-file"); p.add_argument("profile"); p.add_argument("host_file"); p.add_argument("file_args", nargs=argparse.REMAINDER)
+    p = sub.add_parser("deps"); p.add_argument("profile"); p.add_argument("verbs", nargs=argparse.REMAINDER)
+    p = sub.add_parser("prefix-create"); p.add_argument("profile"); p.add_argument("--rebuild", action="store_true")
+    sub.add_parser("gamepads")
+    sub.add_parser("display-check")
+    p = sub.add_parser("input-debug"); p.add_argument("profile"); p.add_argument("payload", nargs=argparse.REMAINDER)
+    args = ap.parse_args()
+    if args.action == "gamepads":
+        return list_devices()
+    if args.action == "display-check":
+        ok, reason = wayland_keyboard_available()
+        print(f"Wayland keyboard capability: {'OK' if ok else 'FALLITO'} — {reason}")
+        print(f"XWayland: {'OK' if os.environ.get('DISPLAY') else 'NON DISPONIBILE'}")
+        print("Nota: la capability wl_seat non prova che Wine riceva un wl_keyboard.enter o un evento key.")
+        return 0 if ok or os.environ.get('DISPLAY') else 1
+    profile = load_profile(args.profile)
+    if args.action == "input-debug":
+        payload = list(args.payload)
+        if payload and payload[0] == "--": payload.pop(0)
+        if not payload:
+            exe = str(profile.get("executable", "")).strip()
+            root = Path(str(profile.get("game_root", "")).strip()).expanduser().resolve() if profile.get("game_root") else None
+            if not exe or not root:
+                die("input-debug richiede un comando oppure game_root ed executable")
+            host_exe = Path(exe).expanduser().resolve()
+            try:
+                rel = host_exe.relative_to(root)
+            except ValueError:
+                die("l'eseguibile deve trovarsi dentro game_root")
+            wine_path = "Z:" + "/game/" + rel.as_posix()
+            env = {}
+            executable = runner_environment(env, profile.get("selected_runner") if isinstance(profile.get("selected_runner"), dict) else None)
+            env["WINEDEBUG"] = "+waylanddrv,+keyboard,+key,+seh"
+            payload = ["env"] + [f"{k}={v}" for k,v in env.items()] + [executable, wine_path]
+        backend = "wayland"
+        print("[input-debug] forcing Wayland + WINEDEBUG=+waylanddrv,+keyboard,+key,+seh", file=sys.stderr)
+        return _run_bwrap_once(profile, payload, backend)
+    if args.action == "prefix-create":
+        return prefix_create(profile, args.rebuild)
+    if args.action == "deps":
+        verbs = list(args.verbs)
+        if verbs and verbs[0] == "--": verbs.pop(0)
+        return install_deps(profile, verbs)
+    if args.action in {"run", "exec", "diag"}:
+        payload = list(args.payload)
+        if payload and payload[0] == "--": payload.pop(0)
+        if args.action == "run" and not payload:
+            exe = str(profile.get("executable", "")).strip()
+            root = Path(str(profile.get("game_root", "")).strip()).expanduser().resolve() if profile.get("game_root") else None
+            if not exe or not root:
+                die("il profilo deve avere game_root ed executable per l'avvio")
+            host_exe = Path(exe).expanduser().resolve()
+            try:
+                rel = host_exe.relative_to(root)
+            except ValueError:
+                die("l'eseguibile deve trovarsi dentro game_root")
+            wine_path = "Z:" + "/game/" + rel.as_posix()
+            env: dict[str, str] = {}
+            runner = profile.get("selected_runner")
+            executable = runner_environment(env, runner if isinstance(runner, dict) else None)
+            payload = ["env"] + [f"{k}={v}" for k, v in env.items()] + [executable, wine_path]
+        if not payload: die(f"{args.action} richiede un comando")
+        if args.action == "run" and str(profile.get("display_backend", "auto")).lower() == "auto":
+            backend = _choose_initial_backend(profile)
+            code = _run_bwrap_once(profile, payload, backend)
+            if code != 0 and backend == "wayland" and profile.get("xwayland_fallback", True) and profile.get("capabilities", {}).get("xwayland"):
+                print("[display] Wayland nativo terminato con errore; fallback automatico a XWayland", file=sys.stderr)
+                return _run_bwrap_once(profile, payload, "xwayland")
+            return code
+        os.execvp("bwrap", build_command(profile, payload, require_game_root=(args.action == "run"), force_network=False))
+    if args.action == "run-file":
+        file_args = list(args.file_args)
+        if file_args and file_args[0] == "--": file_args.pop(0)
+        return run_file(profile, args.host_file, file_args)
+    if args.action == "wine":
+        wine_args = list(args.wine_args)
+        if wine_args and wine_args[0] == "--": wine_args.pop(0)
+        return run_wine(profile, wine_args)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -6,6 +6,7 @@
   "prefix_root": "",
   "save_root": "",
   "sandbox_home": "",
+  "game_root_readonly": true,
   "wineprefix": "/prefix",
   "wine_arch": "win64",
   "windows_version": "windows10",
