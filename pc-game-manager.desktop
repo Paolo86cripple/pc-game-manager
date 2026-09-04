@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=PC Game Manager
+Comment=Manager e launcher sandboxato per giochi PC di tutte le epoche
+Exec=pc-game-manager
+Icon=applications-games
+Terminal=false
+Categories=Game;

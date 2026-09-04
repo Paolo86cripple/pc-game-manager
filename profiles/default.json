@@ -1,0 +1,42 @@
+{
+  "name": "Nuovo gioco",
+  "network": "none",
+  "game_root": "",
+  "executable": "",
+  "prefix_root": "",
+  "save_root": "",
+  "sandbox_home": "",
+  "wineprefix": "/prefix",
+  "wine_arch": "win64",
+  "windows_version": "windows10",
+  "input_devices": [],
+  "allowed_paths": [],
+  "selected_runner": null,
+  "gpu": {
+    "mode": "auto"
+  },
+  "renderer": "wined3d",
+  "renderer_path": "",
+  "prefer_wayland": true,
+  "audio_backend": "pulse",
+  "dependencies": [],
+  "prefix_bootstrap": true,
+  "capabilities": {
+    "wayland": true,
+    "xwayland": true,
+    "vulkan": true,
+    "audio": true,
+    "input": true,
+    "cdemu": false,
+    "udisks2": false
+  },
+  "discs": [],
+  "display_backend": "auto",
+  "xwayland_fallback": true,
+  "wayland_input_status": "unknown",
+  "wayland_input_reason": "",
+  "vkd3d_enabled": false,
+  "vkd3d_path": "",
+  "nvapi_enabled": false,
+  "nvapi_path": ""
+}
